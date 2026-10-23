@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>이용권 결제 통계</title>
+<meta name="description" content="보배드림 매물등록 이용권 5종의 결제 현황을 집계하는 관리자 대시보드">
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --accent: #2a78d6;
+    --accent-ink: #ffffff;
+    --ghost: rgba(11,11,11,0.05);
+    --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4;
+    --seq-light: #cde2fb;
+    --good: #006300; --good-fill: #0ca30c;
+    --critical: #d03b3b;
+    --warning: #fab219;
+    --tooltip-bg: #0b0b0b; --tooltip-ink: #f0efec;
+    --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page: #0d0d0d; --surface: #1a1a19;
+      --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+      --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+      --accent: #3987e5; --ghost: rgba(255,255,255,0.06);
+      --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
+      --seq-light: #184f95;
+      --good: #0ca30c; --critical: #d03b3b;
+      --tooltip-bg: #f0efec; --tooltip-ink: #0b0b0b;
+      --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19;
+    --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --accent: #3987e5; --ghost: rgba(255,255,255,0.06);
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
+    --seq-light: #184f95;
+    --good: #0ca30c; --critical: #d03b3b;
+    --tooltip-bg: #f0efec; --tooltip-ink: #0b0b0b;
+    --shadow: none;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--page); color: var(--ink);
+    font-family: system-ui, -apple-system, "Apple SD Gothic Neo", "Segoe UI", "Malgun Gothic", "Noto Sans KR", sans-serif;
+    font-size: 14px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  button { font: inherit; color: inherit; }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 20;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+  }
+  .topbar-inner {
+    max-width: 1240px; margin: 0 auto; padding: 0 16px;
+    height: 56px; display: flex; align-items: center; gap: 12px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; }
+  .brand .logo {
+    width: 28px; height: 28px; border-radius: 50%; background: var(--accent);
+    display: grid; place-items: center; color: #fff; font-size: 13px;
+  }
+  .brand .crumb { color: var(--muted); font-weight: 400; }
+  .brand .crumb::before { content: "/"; margin: 0 8px; color: var(--axis); }
+  .topbar .spacer { flex: 1; }
+  .pill {
+    font-size: 12px; padding: 3px 10px; border-radius: 999px;
+    border: 1px solid var(--border); color: var(--ink-2); background: var(--ghost);
+    white-space: nowrap;
+  }
+  .pill.live { border-color: var(--good-fill); color: var(--good); }
+  .iconbtn {
+    width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border);
+    background: transparent; cursor: pointer; display: grid; place-items: center;
+  }
+  .iconbtn:hover { background: var(--ghost); }
+
+  main { max-width: 1240px; margin: 0 auto; padding: 20px 16px 48px; }
+  h1 { font-size: 20px; margin: 0 0 4px; font-weight: 700; }
+  .sub { color: var(--muted); margin: 0 0 16px; font-size: 13px; }
+
+  /* filter row */
+  .filters {
+    display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center;
+    padding: 12px 16px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; margin-bottom: 16px;
+  }
+  .filters .group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .filters .label { font-size: 12px; color: var(--muted); margin-right: 4px; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .seg button {
+    padding: 6px 12px; border: 0; background: transparent; cursor: pointer; font-size: 13px;
+    color: var(--ink-2); border-right: 1px solid var(--border);
+  }
+  .seg button:last-child { border-right: 0; }
+  .seg button:hover { background: var(--ghost); }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+  .filters select, .filters input[type="date"] {
+    font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+  }
+  .filters .right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .btn {
+    padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface); cursor: pointer; font-size: 13px;
+  }
+  .btn:hover { background: var(--ghost); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+
+  /* kpi tiles */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .tile {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px 18px; min-width: 0;
+  }
+  .tile .k { font-size: 12px; color: var(--muted); }
+  .tile .v { font-size: 26px; font-weight: 700; margin: 4px 0 2px; letter-spacing: -0.01em; }
+  .tile .v small { font-size: 14px; font-weight: 500; color: var(--ink-2); margin-left: 2px; }
+  .tile .d { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px 8px; flex-wrap: wrap; }
+  .delta { display: inline-flex; align-items: center; gap: 3px; font-weight: 600; }
+  .delta.up { color: var(--good); }
+  .delta.down { color: var(--critical); }
+  .delta.flat { color: var(--muted); }
+  .spark { margin-top: 10px; height: 28px; width: 100%; display: block; }
+
+  /* cards */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .grid.full { grid-template-columns: 1fr; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px 18px 12px; position: relative; min-width: 0;
+  }
+  .card-h { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+  .card-h h2 { white-space: nowrap; }
+  .card-h h2 { font-size: 14px; margin: 0; font-weight: 600; }
+  .card-h .hint { font-size: 12px; color: var(--muted); }
+  .card-h .tools { margin-left: auto; display: flex; gap: 4px; }
+  .mini {
+    font-size: 12px; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border);
+    background: transparent; cursor: pointer; color: var(--ink-2);
+  }
+  .mini { white-space: nowrap; }
+  .mini:hover { background: var(--ghost); }
+  .mini[aria-pressed="true"] { background: var(--ghost); color: var(--ink); }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--ink-2); margin: 2px 0 8px; }
+  .legend .it { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; padding: 2px 0; }
+  .legend .sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .legend .it.off { opacity: 0.4; text-decoration: line-through; }
+  .plot { position: relative; }
+  .plot svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .plot text { font-family: inherit; font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+  .plot .grid-line { stroke: var(--grid); stroke-width: 1; }
+  .plot .axis-line { stroke: var(--axis); stroke-width: 1; }
+  .plot .lbl { fill: var(--ink-2); font-size: 11px; }
+  .plot .lbl.strong { fill: var(--ink); font-weight: 600; }
+  .plot .hit { fill: transparent; }
+  .plot .xhair { stroke: var(--axis); stroke-width: 1; pointer-events: none; }
+  .tooltip {
+    position: absolute; z-index: 5; pointer-events: none;
+    background: var(--tooltip-bg); color: var(--tooltip-ink);
+    padding: 8px 10px; border-radius: 8px; font-size: 12px; line-height: 1.45;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18); white-space: nowrap; display: none;
+    font-variant-numeric: tabular-nums;
+  }
+  .tooltip .t { font-weight: 600; margin-bottom: 2px; }
+  .tooltip .r { display: flex; gap: 10px; justify-content: space-between; }
+  .tooltip .r .sw { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 5px; }
+  .tableview { display: none; max-height: 320px; overflow: auto; }
+  .card.show-table .plot, .card.show-table .legend { display: none; }
+  .card.show-table .tableview { display: block; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th { font-size: 12px; color: var(--muted); font-weight: 500; position: sticky; top: 0; background: var(--surface); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr:hover td { background: var(--ghost); }
+  .status { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
+  .status .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .status.paid .dot { background: var(--good-fill); }
+  .status.refunded .dot { background: var(--critical); }
+  .status.failed .dot { background: var(--warning); }
+  .prodtag { display: inline-flex; align-items: center; gap: 6px; }
+  .prodtag .sw { width: 8px; height: 8px; border-radius: 2px; }
+  .tfoot { display: flex; align-items: center; gap: 10px; padding-top: 10px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+  .tfoot .pages { margin-left: auto; display: flex; gap: 4px; }
+  .search {
+    font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 8px; width: 220px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+  }
+  .tablewrap { overflow: auto; }
+  .empty { color: var(--muted); font-size: 13px; padding: 32px 0; text-align: center; }
+  .foot { color: var(--muted); font-size: 12px; margin-top: 20px; line-height: 1.6; }
+  .foot code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11px; background: var(--ghost); padding: 1px 5px; border-radius: 4px; }
+
+  @media (max-width: 960px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    .kpis { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .tile { padding: 12px 14px; }
+    .tile .v { font-size: 20px; }
+    .brand .crumb { display: none; }
+    .filters .right { margin-left: 0; width: 100%; }
+    .search { width: 100%; }
+    .card-h .tools { width: 100%; margin-left: 0; }
+    .card-h .tools:has(.search) { order: 3; }
+    .card-h:has(.search) .hint { margin-left: auto; }
+  }
+  @media print {
+    .topbar, .filters .right, .card-h .tools, .tfoot .pages { display: none; }
+    body { background: #fff; }
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand"><span class="logo">B</span><span>보배드림 관리자</span><span class="crumb">이용권 결제 통계</span></div>
+    <div class="spacer"></div>
+    <span class="pill" id="dataBadge">데이터 로딩 중</span>
+    <button class="iconbtn" id="themeBtn" title="테마 전환" aria-label="테마 전환">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+  <h1>이용권 결제 통계</h1>
+  <p class="sub">매물등록 이용권 5종(대당 등록 · 5대 자유등록 · 딜러 1개월 · 상사 5명 · 상사 무제한)의 결제 현황입니다. 기간과 상품을 바꾸면 아래 모든 수치가 함께 바뀝니다.</p>
+
+  <section class="filters" aria-label="필터">
+    <div class="group">
+      <span class="label">기간</span>
+      <div class="seg" id="rangeSeg" role="group" aria-label="기간 선택">
+        <button data-range="7">7일</button>
+        <button data-range="30" aria-pressed="true">30일</button>
+        <button data-range="90">90일</button>
+        <button data-range="mtd">이번 달</button>
+        <button data-range="custom">직접 지정</button>
+      </div>
+      <span id="customRange" style="display:none; gap:6px; align-items:center;">
+        <input type="date" id="fromDate"> <span class="label">~</span> <input type="date" id="toDate">
+      </span>
+    </div>
+    <div class="group">
+      <span class="label">상품</span>
+      <select id="productSel"><option value="all">전체 상품</option></select>
+    </div>
+    <div class="group">
+      <span class="label">결제상태</span>
+      <select id="statusSel">
+        <option value="all">전체</option>
+        <option value="paid">결제완료</option>
+        <option value="refunded">환불</option>
+        <option value="failed">실패</option>
+      </select>
+    </div>
+    <div class="right">
+      <span class="label" id="rangeText"></span>
+      <button class="btn" id="csvBtn">CSV 내보내기</button>
+    </div>
+  </section>
+
+  <section class="kpis" id="kpis" aria-label="핵심 지표"></section>
+
+  <section class="grid full">
+    <div class="card" id="cardTrend">
+      <div class="card-h"><h2>일별 결제금액 추이</h2><span class="hint">결제완료 기준 · 환불 제외</span>
+        <div class="tools"><button class="mini" data-toggle-table="cardTrend">표 보기</button></div></div>
+      <div class="plot" id="trendPlot"></div>
+      <div class="tableview" id="trendTable"></div>
+    </div>
+  </section>
+
+  <section class="grid">
+    <div class="card" id="cardByProduct">
+      <div class="card-h"><h2>상품별 결제금액</h2><span class="hint">기간 합계</span>
+        <div class="tools"><button class="mini" data-toggle-table="cardByProduct">표 보기</button></div></div>
+      <div class="plot" id="byProductPlot"></div>
+      <div class="tableview" id="byProductTable"></div>
+    </div>
+    <div class="card" id="cardStack">
+      <div class="card-h"><h2>상품별 일별 결제 건수</h2><span class="hint">범례를 눌러 상품 숨기기</span>
+        <div class="tools"><button class="mini" data-toggle-table="cardStack">표 보기</button></div></div>
+      <div class="legend" id="stackLegend"></div>
+      <div class="plot" id="stackPlot"></div>
+      <div class="tableview" id="stackTable"></div>
+    </div>
+  </section>
+
+  <section class="grid">
+    <div class="card" id="cardMethod">
+      <div class="card-h"><h2>결제수단별 비중</h2><span class="hint">건수 기준</span>
+        <div class="tools"><button class="mini" data-toggle-table="cardMethod">표 보기</button></div></div>
+      <div class="plot" id="methodPlot"></div>
+      <div class="tableview" id="methodTable"></div>
+    </div>
+    <div class="card" id="cardType">
+      <div class="card-h"><h2>신규 결제 vs 자동갱신</h2><span class="hint">상품별 건수</span>
+        <div class="tools"><button class="mini" data-toggle-table="cardType">표 보기</button></div></div>
+      <div class="legend" id="typeLegend"></div>
+      <div class="plot" id="typePlot"></div>
+      <div class="tableview" id="typeTable"></div>
+    </div>
+  </section>
+
+  <section class="grid full">
+    <div class="card" id="cardList">
+      <div class="card-h"><h2>결제 내역</h2><span class="hint" id="listCount"></span>
+        <div class="tools"><input class="search" id="searchBox" placeholder="주문번호 · 회원 · 상사명 검색" aria-label="검색"></div></div>
+      <div class="tablewrap" id="listTable"></div>
+      <div class="tfoot" id="listFoot"></div>
+    </div>
+  </section>
+
+  <p class="foot" id="footNote"></p>
+</main>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- product catalog (matches the app's 이용권 선택 screen) ---------- */
+const PRODUCTS = [
+  { id: 'single',    name: '대당 등록 이용권',             short: '대당 등록',    price: 11000,  period: '2개월', slot: 1, auto: false },
+  { id: 'free5',     name: '5대 자유등록 1개월 이용권',     short: '5대 자유등록', price: 55000,  period: '1개월', slot: 2, auto: false },
+  { id: 'dealer',    name: '딜러 1개월 이용권',            short: '딜러 1개월',   price: 157000, period: '1개월', slot: 3, auto: true  },
+  { id: 'company5',  name: '상사 1개월 이용권 (~5명)',      short: '상사 5명',     price: 315000, period: '1개월', slot: 4, auto: true  },
+  { id: 'companyU',  name: '상사 1개월 이용권 (인원수 무제한)', short: '상사 무제한', price: 472000, period: '1개월', slot: 5, auto: true  },
+];
+const PMAP = Object.fromEntries(PRODUCTS.map(p => [p.id, p]));
+const METHODS = { card: '신용/체크카드', easy: '간편결제', transfer: '계좌이체', vbank: '가상계좌' };
+const STATUS = { paid: '결제완료', refunded: '환불', failed: '실패' };
+const TYPES = { new: '신규 결제', renewal: '자동갱신' };
+
+/* ---------- helpers ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+const fmt = n => Math.round(n).toLocaleString('ko-KR');
+const won = n => fmt(n) + '원';
+const compactWon = n => {
+  const a = Math.abs(n);
+  if (a >= 1e8) return (n / 1e8).toFixed(a >= 1e9 ? 0 : 1).replace(/\.0$/, '') + '억';
+  if (a >= 1e4) return Math.round(n / 1e4).toLocaleString('ko-KR') + '만';
+  return fmt(n);
+};
+const pad = n => String(n).padStart(2, '0');
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parseISO = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const mdLabel = s => { const d = parseISO(s); return `${d.getMonth() + 1}/${d.getDate()}`; };
+const koDate = s => { const d = parseISO(s); return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`; };
+const slotColor = slot => `var(--s${slot})`;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const svgNS = 'http://www.w3.org/2000/svg';
+const plotW = (plot, fallback) => Math.max(320, Math.round(plot.clientWidth || fallback));
+function el(tag, attrs = {}, children = []) {
+  const n = document.createElementNS(svgNS, tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  for (const c of children) n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+  return n;
+}
+function niceMax(v) {
+  if (v <= 0) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  const f = v / p;
+  const n = f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10;
+  return n * p;
+}
+
+/* ---------- sample data (deterministic) ---------- */
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const COMPANIES = ['서울오토갤러리', '동서울모터스', '수원카랜드', '인천자동차매매', '부산오토시티', '대구드림카', '광주중고차', '일산모터타운', '천안카프라자', '울산오토'];
+function makeSample(days) {
+  const rnd = mulberry32(20261023);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const base = { single: 38, free5: 11, dealer: 7, company5: 2.2, companyU: 0.9 };
+  const rows = []; let seq = 1;
+  for (let i = days - 1; i >= 0; i--) {
+    const d = addDays(today, -i); const ds = iso(d); const dow = d.getDay();
+    const wk = (dow === 0 || dow === 6) ? 0.55 : 1;
+    const trend = 1 + (days - 1 - i) / days * 0.18;
+    const month1 = d.getDate() <= 3 ? 1.6 : 1;
+    for (const p of PRODUCTS) {
+      const lam = base[p.id] * wk * trend * (p.auto ? month1 : 1);
+      const n = Math.max(0, Math.round(lam + (rnd() + rnd() + rnd() - 1.5) * Math.sqrt(lam) * 1.4));
+      for (let k = 0; k < n; k++) {
+        const r = rnd();
+        const status = r < 0.025 ? 'refunded' : r < 0.055 ? 'failed' : 'paid';
+        const m = rnd();
+        const method = m < 0.58 ? 'card' : m < 0.86 ? 'easy' : m < 0.96 ? 'transfer' : 'vbank';
+        const type = p.auto ? (rnd() < 0.68 ? 'renewal' : 'new') : 'new';
+        const hh = Math.floor(8 + rnd() * 14), mm = Math.floor(rnd() * 60);
+        rows.push({
+          id: `PY${ds.replace(/-/g, '')}${pad(seq++ % 1000).padStart(3, '0')}`,
+          date: ds, time: `${pad(hh)}:${pad(mm)}`,
+          product: p.id, amount: p.price, method, type, status,
+          user: `bb****${Math.floor(1000 + rnd() * 9000)}`,
+          company: p.id.startsWith('company') || (p.id === 'dealer' && rnd() < 0.7) ? COMPANIES[Math.floor(rnd() * COMPANIES.length)] : '',
+        });
+      }
+    }
+  }
+  return rows;
+}
+
+/* ---------- state ---------- */
+const state = { rows: [], range: '30', from: null, to: null, product: 'all', status: 'all', hidden: new Set(), page: 1, search: '', sample: true };
+
+function periodBounds() {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  if (state.range === 'custom' && state.from && state.to) return [state.from, state.to];
+  if (state.range === 'mtd') return [iso(new Date(today.getFullYear(), today.getMonth(), 1)), iso(today)];
+  const n = Number(state.range);
+  return [iso(addDays(today, -(n - 1))), iso(today)];
+}
+function prevBounds(from, to) {
+  const len = Math.round((parseISO(to) - parseISO(from)) / 864e5) + 1;
+  return [iso(addDays(parseISO(from), -len)), iso(addDays(parseISO(from), -1))];
+}
+function dayList(from, to) {
+  const out = []; let d = parseISO(from); const end = parseISO(to);
+  while (d <= end) { out.push(iso(d)); d = addDays(d, 1); }
+  return out;
+}
+function filterRows(from, to, { ignoreStatus = false } = {}) {
+  return state.rows.filter(r => r.date >= from && r.date <= to
+    && (state.product === 'all' || r.product === state.product)
+    && (ignoreStatus || state.status === 'all' || r.status === state.status));
+}
+
+/* ---------- tooltip ---------- */
+function attachTooltip(plot) {
+  let tip = plot.querySelector('.tooltip');
+  if (!tip) { tip = document.createElement('div'); tip.className = 'tooltip'; plot.appendChild(tip); }
+  return {
+    show(html, x, y) {
+      tip.innerHTML = html; tip.style.display = 'block';
+      const pw = plot.clientWidth, tw = tip.offsetWidth, th = tip.offsetHeight;
+      let left = x + 14; if (left + tw > pw) left = x - tw - 14; if (left < 0) left = 0;
+      let top = y - th - 10; if (top < 0) top = y + 14;
+      tip.style.left = left + 'px'; tip.style.top = top + 'px';
+    },
+    hide() { tip.style.display = 'none'; }
+  };
+}
+function relPos(evt, plot) { const r = plot.getBoundingClientRect(); return [evt.clientX - r.left, evt.clientY - r.top]; }
+
+/* ---------- KPI tiles ---------- */
+function sparkline(values) {
+  const w = 160, h = 28, max = Math.max(1, ...values), n = values.length;
+  const pts = values.map((v, i) => `${(i / Math.max(1, n - 1) * w).toFixed(1)},${(h - 2 - v / max * (h - 4)).toFixed(1)}`);
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${pts.join(' ')}"/></svg>`;
+}
+function deltaHtml(cur, prev, suffix = '') {
+  if (!prev) return `<span class="delta flat">이전 기간 데이터 없음</span>`;
+  const pct = (cur - prev) / prev * 100;
+  const cls = Math.abs(pct) < 0.05 ? 'flat' : pct > 0 ? 'up' : 'down';
+  const arrow = cls === 'up' ? '▲' : cls === 'down' ? '▼' : '–';
+  return `<span class="delta ${cls}" title="이전 기간 대비">${arrow} ${Math.abs(pct).toFixed(1)}%</span><span>이전 기간 ${suffix}</span>`;
+}
+function renderKpis(from, to) {
+  const cur = filterRows(from, to, { ignoreStatus: true });
+  const [pf, pt] = prevBounds(from, to);
+  const prev = filterRows(pf, pt, { ignoreStatus: true });
+  const sum = (rows, pred) => rows.filter(pred).reduce((a, r) => a + r.amount, 0);
+  const cnt = (rows, pred) => rows.filter(pred).length;
+  const isPaid = r => r.status === 'paid', isRef = r => r.status === 'refunded';
+  const days = dayList(from, to);
+  const daily = days.map(d => cur.filter(r => r.date === d && isPaid(r)).reduce((a, r) => a + r.amount, 0));
+  const paidAmt = sum(cur, isPaid), paidCnt = cnt(cur, isPaid);
+  const pPaidAmt = sum(prev, isPaid), pPaidCnt = cnt(prev, isPaid);
+  const refAmt = sum(cur, isRef), refCnt = cnt(cur, isRef), pRefAmt = sum(prev, isRef);
+  const avg = paidCnt ? paidAmt / paidCnt : 0, pAvg = pPaidCnt ? pPaidAmt / pPaidCnt : 0;
+  const tiles = [
+    { k: '결제금액 (완료)', v: `${fmt(paidAmt)}<small>원</small>`, d: deltaHtml(paidAmt, pPaidAmt, won(pPaidAmt)), spark: sparkline(daily) },
+    { k: '결제 건수', v: `${fmt(paidCnt)}<small>건</small>`, d: deltaHtml(paidCnt, pPaidCnt, fmt(pPaidCnt) + '건') },
+    { k: '평균 결제단가', v: `${fmt(avg)}<small>원</small>`, d: deltaHtml(avg, pAvg, won(pAvg)) },
+    { k: '환불', v: `${fmt(refAmt)}<small>원</small>`, d: `<span>${fmt(refCnt)}건 · 환불률 ${(paidCnt + refCnt ? refCnt / (paidCnt + refCnt) * 100 : 0).toFixed(1)}%</span> ${pRefAmt ? deltaHtml(refAmt, pRefAmt, won(pRefAmt)) : ''}` },
+  ];
+  $('#kpis').innerHTML = tiles.map(t => `<div class="tile"><div class="k">${t.k}</div><div class="v">${t.v}</div><div class="d">${t.d}</div>${t.spark || ''}</div>`).join('');
+}
+
+/* ---------- chart: daily trend (single series line) ---------- */
+function renderTrend(from, to) {
+  const plot = $('#trendPlot'); plot.innerHTML = '';
+  const days = dayList(from, to);
+  const rows = filterRows(from, to, { ignoreStatus: true }).filter(r => r.status === 'paid');
+  const byDay = Object.fromEntries(days.map(d => [d, 0]));
+  rows.forEach(r => byDay[r.date] += r.amount);
+  const vals = days.map(d => byDay[d]);
+  const W = plotW(plot, 1000), H = W < 560 ? 220 : 260, m = { t: 16, r: 24, b: 30, l: 50 };
+  const pw = W - m.l - m.r, ph = H - m.t - m.b;
+  const maxV = niceMax(Math.max(...vals, 1));
+  const x = i => m.l + (days.length === 1 ? pw / 2 : i / (days.length - 1) * pw);
+  const y = v => m.t + ph - v / maxV * ph;
+  const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': '일별 결제금액 추이' });
+  for (let k = 0; k <= 4; k++) {
+    const v = maxV * k / 4, yy = y(v);
+    svg.appendChild(el('line', { x1: m.l, x2: W - m.r, y1: yy, y2: yy, class: k === 0 ? 'axis-line' : 'grid-line' }));
+    svg.appendChild(el('text', { x: m.l - 8, y: yy + 4, 'text-anchor': 'end' }, [compactWon(v)]));
+  }
+  const step = Math.ceil(days.length / (W < 560 ? 5 : 10));
+  const showLbl = (i, n) => i === n - 1 || (i % step === 0 && n - 1 - i >= step / 2);
+  days.forEach((d, i) => { if (showLbl(i, days.length)) svg.appendChild(el('text', { x: x(i), y: H - 8, 'text-anchor': 'middle' }, [mdLabel(d)])); });
+  const path = vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  svg.appendChild(el('path', { d: `${path} L${x(vals.length - 1).toFixed(1)},${y(0)} L${x(0).toFixed(1)},${y(0)} Z`, fill: 'var(--s1)', opacity: '0.08' }));
+  svg.appendChild(el('path', { d: path, fill: 'none', stroke: 'var(--s1)', 'stroke-width': 2, 'stroke-linejoin': 'round' }));
+  const maxI = vals.indexOf(Math.max(...vals));
+  if (vals.length > 1) {
+    svg.appendChild(el('circle', { cx: x(maxI), cy: y(vals[maxI]), r: 4, fill: 'var(--s1)', stroke: 'var(--surface)', 'stroke-width': 2 }));
+    const tx = Math.min(Math.max(x(maxI), m.l + 40), W - m.r - 40);
+    svg.appendChild(el('text', { x: tx, y: y(vals[maxI]) - 10, 'text-anchor': 'middle', class: 'lbl strong' }, [`최고 ${compactWon(vals[maxI])}`]));
+    const li = vals.length - 1;
+    svg.appendChild(el('circle', { cx: x(li), cy: y(vals[li]), r: 4, fill: 'var(--s1)', stroke: 'var(--surface)', 'stroke-width': 2 }));
+  }
+  const xhair = el('line', { class: 'xhair', y1: m.t, y2: m.t + ph, style: 'display:none' });
+  const dot = el('circle', { r: 5, fill: 'var(--s1)', stroke: 'var(--surface)', 'stroke-width': 2, style: 'display:none' });
+  svg.appendChild(xhair); svg.appendChild(dot);
+  const hit = el('rect', { x: m.l, y: m.t, width: pw, height: ph, class: 'hit' });
+  svg.appendChild(hit);
+  plot.appendChild(svg);
+  const tip = attachTooltip(plot);
+  const counts = Object.fromEntries(days.map(d => [d, 0])); rows.forEach(r => counts[r.date]++);
+  hit.addEventListener('mousemove', e => {
+    const [px, py] = relPos(e, plot); const sw = plot.clientWidth / W;
+    const i = Math.round(((px / sw) - m.l) / pw * (days.length - 1));
+    if (i < 0 || i >= days.length) return;
+    xhair.setAttribute('x1', x(i)); xhair.setAttribute('x2', x(i)); xhair.style.display = '';
+    dot.setAttribute('cx', x(i)); dot.setAttribute('cy', y(vals[i])); dot.style.display = '';
+    tip.show(`<div class="t">${koDate(days[i])}</div><div class="r"><span>결제금액</span><b>${won(vals[i])}</b></div><div class="r"><span>건수</span><b>${fmt(counts[days[i]])}건</b></div>`, x(i) * sw, py);
+  });
+  hit.addEventListener('mouseleave', () => { xhair.style.display = 'none'; dot.style.display = 'none'; tip.hide(); });
+  $('#trendTable').innerHTML = `<table><thead><tr><th>일자</th><th class="num">결제금액</th><th class="num">건수</th></tr></thead><tbody>${days.map(d => `<tr><td>${koDate(d)}</td><td class="num">${won(byDay[d])}</td><td class="num">${fmt(counts[d])}</td></tr>`).join('')}</tbody></table>`;
+}
+
+/* ---------- chart: horizontal bars by product ---------- */
+function hbars(plot, items, { valueFmt, ariaLabel, colorOf }) {
+  plot.innerHTML = '';
+  const W = plotW(plot, 520), rowH = 34, m = { t: 6, r: 96, b: 6, l: 96 };
+  const H = m.t + m.b + items.length * rowH;
+  const pw = W - m.l - m.r;
+  const maxV = Math.max(1, ...items.map(i => i.value));
+  const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': ariaLabel });
+  svg.appendChild(el('line', { x1: m.l, x2: m.l, y1: m.t, y2: H - m.b, class: 'axis-line' }));
+  const tip = attachTooltip(plot);
+  items.forEach((it, i) => {
+    const y = m.t + i * rowH + 7, h = rowH - 14, w = Math.max(it.value / maxV * pw, it.value > 0 ? 3 : 0);
+    svg.appendChild(el('text', { x: m.l - 10, y: y + h / 2 + 4, 'text-anchor': 'end', class: 'lbl' }, [it.label]));
+    svg.appendChild(el('rect', { x: m.l, y, width: w, height: h, rx: 4, fill: colorOf(it) }));
+    if (w > 4) svg.appendChild(el('rect', { x: m.l, y, width: 4, height: h, fill: colorOf(it) }));
+    svg.appendChild(el('text', { x: m.l + w + 8, y: y + h / 2 + 4, class: 'lbl strong' }, [valueFmt(it)]));
+    const hit = el('rect', { x: 0, y: m.t + i * rowH, width: W, height: rowH, class: 'hit' });
+    hit.addEventListener('mousemove', e => { const [px, py] = relPos(e, plot); tip.show(it.tip, px, py); });
+    hit.addEventListener('mouseleave', () => tip.hide());
+    svg.appendChild(hit);
+  });
+  plot.appendChild(svg);
+}
+function renderByProduct(from, to) {
+  const rows = filterRows(from, to, { ignoreStatus: true }).filter(r => r.status === 'paid');
+  const total = rows.reduce((a, r) => a + r.amount, 0) || 1;
+  const items = PRODUCTS.map(p => {
+    const rs = rows.filter(r => r.product === p.id); const v = rs.reduce((a, r) => a + r.amount, 0);
+    return { label: p.short, value: v, count: rs.length, share: v / total * 100, slot: p.slot, name: p.name,
+      tip: `<div class="t">${esc(p.name)}</div><div class="r"><span>결제금액</span><b>${won(v)}</b></div><div class="r"><span>건수</span><b>${fmt(rs.length)}건</b></div><div class="r"><span>비중</span><b>${(v / total * 100).toFixed(1)}%</b></div>` };
+  });
+  hbars($('#byProductPlot'), items, { ariaLabel: '상품별 결제금액', colorOf: it => slotColor(it.slot), valueFmt: it => `${compactWon(it.value)} · ${it.share.toFixed(0)}%` });
+  $('#byProductTable').innerHTML = `<table><thead><tr><th>상품</th><th class="num">단가</th><th class="num">건수</th><th class="num">결제금액</th><th class="num">비중</th></tr></thead><tbody>${items.map((it, i) => `<tr><td>${esc(it.name)}</td><td class="num">${won(PRODUCTS[i].price)}</td><td class="num">${fmt(it.count)}</td><td class="num">${won(it.value)}</td><td class="num">${it.share.toFixed(1)}%</td></tr>`).join('')}</tbody></table>`;
+}
+
+/* ---------- chart: stacked daily counts by product ---------- */
+function renderStack(from, to) {
+  const plot = $('#stackPlot'); plot.innerHTML = '';
+  const days = dayList(from, to);
+  const rows = filterRows(from, to);
+  const visible = PRODUCTS.filter(p => !state.hidden.has(p.id) && (state.product === 'all' || p.id === state.product));
+  const matrix = days.map(d => Object.fromEntries(PRODUCTS.map(p => [p.id, 0])));
+  const idx = Object.fromEntries(days.map((d, i) => [d, i]));
+  rows.forEach(r => matrix[idx[r.date]][r.product]++);
+  const totals = matrix.map(row => visible.reduce((a, p) => a + row[p.id], 0));
+  const W = plotW(plot, 520), H = 240, m = { t: 12, r: 10, b: 28, l: 36 };
+  const pw = W - m.l - m.r, ph = H - m.t - m.b;
+  const maxV = niceMax(Math.max(1, ...totals));
+  const n = days.length, slotW = pw / n, gap = n > 40 ? 1 : 2, bw = Math.max(1, slotW - gap);
+  const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': '상품별 일별 결제 건수' });
+  for (let k = 0; k <= 4; k++) {
+    const v = maxV * k / 4, yy = m.t + ph - v / maxV * ph;
+    svg.appendChild(el('line', { x1: m.l, x2: W - m.r, y1: yy, y2: yy, class: k === 0 ? 'axis-line' : 'grid-line' }));
+    svg.appendChild(el('text', { x: m.l - 6, y: yy + 4, 'text-anchor': 'end' }, [fmt(v)]));
+  }
+  const step = Math.ceil(n / (W < 560 ? 5 : 8));
+  const tip = attachTooltip(plot);
+  days.forEach((d, i) => {
+    const x0 = m.l + i * slotW + gap / 2;
+    if (i === n - 1 || (i % step === 0 && n - 1 - i >= step / 2)) svg.appendChild(el('text', { x: x0 + bw / 2, y: H - 8, 'text-anchor': 'middle' }, [mdLabel(d)]));
+    let acc = 0;
+    visible.forEach((p, j) => {
+      const v = matrix[i][p.id]; if (!v) return;
+      const y1 = m.t + ph - (acc + v) / maxV * ph, hh = v / maxV * ph;
+      const isTop = visible.slice(j + 1).every(q => !matrix[i][q.id]);
+      const segH = Math.max(0, hh - (acc ? 2 : 0));
+      svg.appendChild(el('rect', { x: x0, y: y1, width: bw, height: segH, rx: isTop ? Math.min(3, bw / 2) : 0, fill: slotColor(p.slot) }));
+      if (isTop && segH > 4) svg.appendChild(el('rect', { x: x0, y: y1 + Math.min(3, segH), width: bw, height: Math.max(0, segH - Math.min(3, segH)), fill: slotColor(p.slot) }));
+      acc += v;
+    });
+    const hit = el('rect', { x: m.l + i * slotW, y: m.t, width: slotW, height: ph, class: 'hit' });
+    hit.addEventListener('mousemove', e => {
+      const [px, py] = relPos(e, plot);
+      const lines = visible.map(p => `<div class="r"><span><i class="sw" style="background:${slotColor(p.slot)}"></i>${esc(p.short)}</span><b>${fmt(matrix[i][p.id])}건</b></div>`).join('');
+      tip.show(`<div class="t">${koDate(d)} · 합계 ${fmt(totals[i])}건</div>${lines}`, px, py);
+      hit.setAttribute('fill', 'var(--ghost)');
+    });
+    hit.addEventListener('mouseleave', () => { tip.hide(); hit.setAttribute('fill', 'transparent'); });
+    svg.appendChild(hit);
+  });
+  plot.appendChild(svg);
+  const legend = $('#stackLegend');
+  legend.innerHTML = PRODUCTS.filter(p => state.product === 'all' || p.id === state.product).map(p => `<span class="it ${state.hidden.has(p.id) ? 'off' : ''}" data-id="${p.id}" role="button" tabindex="0" aria-pressed="${!state.hidden.has(p.id)}"><i class="sw" style="background:${slotColor(p.slot)}"></i>${esc(p.short)}</span>`).join('');
+  legend.querySelectorAll('.it').forEach(it => {
+    const toggle = () => { const id = it.dataset.id; state.hidden.has(id) ? state.hidden.delete(id) : state.hidden.add(id); renderStack(from, to); };
+    it.addEventListener('click', toggle);
+    it.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+  });
+  $('#stackTable').innerHTML = `<table><thead><tr><th>일자</th>${PRODUCTS.map(p => `<th class="num">${esc(p.short)}</th>`).join('')}<th class="num">합계</th></tr></thead><tbody>${days.map((d, i) => `<tr><td>${koDate(d)}</td>${PRODUCTS.map(p => `<td class="num">${fmt(matrix[i][p.id])}</td>`).join('')}<td class="num">${fmt(PRODUCTS.reduce((a, p) => a + matrix[i][p.id], 0))}</td></tr>`).join('')}</tbody></table>`;
+}
+
+/* ---------- chart: payment method ---------- */
+function renderMethod(from, to) {
+  const rows = filterRows(from, to);
+  const total = rows.length || 1;
+  const items = Object.entries(METHODS).map(([k, label]) => {
+    const rs = rows.filter(r => r.method === k); const amt = rs.reduce((a, r) => a + r.amount, 0);
+    return { label, value: rs.length, amt, share: rs.length / total * 100,
+      tip: `<div class="t">${label}</div><div class="r"><span>건수</span><b>${fmt(rs.length)}건</b></div><div class="r"><span>금액</span><b>${won(amt)}</b></div><div class="r"><span>비중</span><b>${(rs.length / total * 100).toFixed(1)}%</b></div>` };
+  }).sort((a, b) => b.value - a.value);
+  hbars($('#methodPlot'), items, { ariaLabel: '결제수단별 비중', colorOf: () => 'var(--s1)', valueFmt: it => `${fmt(it.value)}건 · ${it.share.toFixed(0)}%` });
+  $('#methodTable').innerHTML = `<table><thead><tr><th>결제수단</th><th class="num">건수</th><th class="num">금액</th><th class="num">비중</th></tr></thead><tbody>${items.map(it => `<tr><td>${it.label}</td><td class="num">${fmt(it.value)}</td><td class="num">${won(it.amt)}</td><td class="num">${it.share.toFixed(1)}%</td></tr>`).join('')}</tbody></table>`;
+}
+
+/* ---------- chart: new vs renewal grouped bars ---------- */
+function renderType(from, to) {
+  const plot = $('#typePlot'); plot.innerHTML = '';
+  const rows = filterRows(from, to);
+  const prods = PRODUCTS.filter(p => state.product === 'all' || p.id === state.product);
+  const data = prods.map(p => ({ p, n: rows.filter(r => r.product === p.id && r.type === 'new').length, r: rows.filter(r => r.product === p.id && r.type === 'renewal').length }));
+  const W = plotW(plot, 520), rowH = 40, m = { t: 4, r: 70, b: 4, l: 90 };
+  const H = m.t + m.b + data.length * rowH, pw = W - m.l - m.r;
+  const maxV = Math.max(1, ...data.flatMap(d => [d.n, d.r]));
+  const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': '신규 결제와 자동갱신 건수' });
+  svg.appendChild(el('line', { x1: m.l, x2: m.l, y1: m.t, y2: H - m.b, class: 'axis-line' }));
+  const tip = attachTooltip(plot);
+  const bar = (y, v, color, h) => {
+    const w = Math.max(v / maxV * pw, v > 0 ? 3 : 0);
+    svg.appendChild(el('rect', { x: m.l, y, width: w, height: h, rx: 3, fill: color }));
+    if (w > 3) svg.appendChild(el('rect', { x: m.l, y, width: 3, height: h, fill: color }));
+    svg.appendChild(el('text', { x: m.l + w + 6, y: y + h / 2 + 4, class: 'lbl' }, [fmt(v)]));
+  };
+  data.forEach((d, i) => {
+    const y0 = m.t + i * rowH;
+    svg.appendChild(el('text', { x: m.l - 10, y: y0 + rowH / 2 + 4, 'text-anchor': 'end', class: 'lbl' }, [d.p.short]));
+    bar(y0 + 6, d.n, 'var(--s1)', 12);
+    bar(y0 + 6 + 12 + 2, d.r, 'var(--s2)', 12);
+    const hit = el('rect', { x: 0, y: y0, width: W, height: rowH, class: 'hit' });
+    hit.addEventListener('mousemove', e => { const [px, py] = relPos(e, plot); tip.show(`<div class="t">${esc(d.p.name)}</div><div class="r"><span><i class="sw" style="background:var(--s1)"></i>신규 결제</span><b>${fmt(d.n)}건</b></div><div class="r"><span><i class="sw" style="background:var(--s2)"></i>자동갱신</span><b>${fmt(d.r)}건</b></div>`, px, py); });
+    hit.addEventListener('mouseleave', () => tip.hide());
+    svg.appendChild(hit);
+  });
+  plot.appendChild(svg);
+  $('#typeLegend').innerHTML = `<span class="it"><i class="sw" style="background:var(--s1)"></i>신규 결제</span><span class="it"><i class="sw" style="background:var(--s2)"></i>자동갱신</span>`;
+  $('#typeTable').innerHTML = `<table><thead><tr><th>상품</th><th class="num">신규 결제</th><th class="num">자동갱신</th><th class="num">갱신 비율</th></tr></thead><tbody>${data.map(d => `<tr><td>${esc(d.p.name)}</td><td class="num">${fmt(d.n)}</td><td class="num">${fmt(d.r)}</td><td class="num">${d.n + d.r ? (d.r / (d.n + d.r) * 100).toFixed(1) : '0.0'}%</td></tr>`).join('')}</tbody></table>`;
+}
+
+/* ---------- payment list ---------- */
+const PAGE = 20;
+function listRows(from, to) {
+  const q = state.search.trim().toLowerCase();
+  return filterRows(from, to)
+    .filter(r => !q || r.id.toLowerCase().includes(q) || r.user.toLowerCase().includes(q) || r.company.toLowerCase().includes(q) || PMAP[r.product].name.toLowerCase().includes(q))
+    .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+}
+function renderList(from, to) {
+  const rows = listRows(from, to);
+  const pages = Math.max(1, Math.ceil(rows.length / PAGE));
+  if (state.page > pages) state.page = pages;
+  const slice = rows.slice((state.page - 1) * PAGE, state.page * PAGE);
+  $('#listCount').textContent = `${fmt(rows.length)}건`;
+  $('#listTable').innerHTML = rows.length ? `<table><thead><tr><th>주문번호</th><th>결제일시</th><th>상품</th><th class="num">금액</th><th>결제수단</th><th>유형</th><th>회원</th><th>상사</th><th>상태</th></tr></thead><tbody>${slice.map(r => {
+    const p = PMAP[r.product];
+    return `<tr><td>${esc(r.id)}</td><td>${koDate(r.date)} ${r.time}</td><td><span class="prodtag"><i class="sw" style="background:${slotColor(p.slot)}"></i>${esc(p.name)}</span></td><td class="num">${won(r.amount)}</td><td>${METHODS[r.method]}</td><td>${TYPES[r.type]}</td><td>${esc(r.user)}</td><td>${esc(r.company) || '<span style="color:var(--muted)">–</span>'}</td><td><span class="status ${r.status}"><i class="dot"></i>${STATUS[r.status]}</span></td></tr>`;
+  }).join('')}</tbody></table>` : `<div class="empty">조건에 맞는 결제 내역이 없습니다.</div>`;
+  const foot = $('#listFoot');
+  foot.innerHTML = `<span>${rows.length ? `${fmt((state.page - 1) * PAGE + 1)}–${fmt(Math.min(rows.length, state.page * PAGE))} / ${fmt(rows.length)}건` : ''}</span><span class="pages"><button class="mini" data-pg="prev" ${state.page <= 1 ? 'disabled' : ''}>이전</button><span style="padding:3px 6px">${state.page} / ${pages}</span><button class="mini" data-pg="next" ${state.page >= pages ? 'disabled' : ''}>다음</button></span>`;
+  foot.querySelectorAll('[data-pg]').forEach(b => b.addEventListener('click', () => { state.page += b.dataset.pg === 'next' ? 1 : -1; renderList(from, to); }));
+}
+
+/* ---------- CSV ---------- */
+function exportCsv() {
+  const [from, to] = periodBounds();
+  const rows = listRows(from, to);
+  const head = ['주문번호', '결제일', '시각', '상품', '금액', '결제수단', '유형', '회원', '상사', '상태'];
+  const lines = [head.join(',')].concat(rows.map(r => [r.id, r.date, r.time, PMAP[r.product].name, r.amount, METHODS[r.method], TYPES[r.type], r.user, r.company, STATUS[r.status]].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')));
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `payment-stats_${from}_${to}.csv`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/* ---------- render all ---------- */
+function renderAll() {
+  const [from, to] = periodBounds();
+  $('#rangeText').textContent = `${koDate(from)} ~ ${koDate(to)}`;
+  renderKpis(from, to); renderTrend(from, to); renderByProduct(from, to);
+  renderStack(from, to); renderMethod(from, to); renderType(from, to); renderList(from, to);
+}
+
+/* ---------- wiring ---------- */
+function init() {
+  const sel = $('#productSel');
+  PRODUCTS.forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = `${p.name} · ${won(p.price)}/${p.period}`; sel.appendChild(o); });
+  sel.addEventListener('change', () => { state.product = sel.value; state.page = 1; renderAll(); });
+  $('#statusSel').addEventListener('change', e => { state.status = e.target.value; state.page = 1; renderAll(); });
+  $('#rangeSeg').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    $('#rangeSeg').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', 'false'));
+    b.setAttribute('aria-pressed', 'true'); state.range = b.dataset.range; state.page = 1;
+    const custom = state.range === 'custom';
+    $('#customRange').style.display = custom ? 'inline-flex' : 'none';
+    if (custom && !state.from) { const [f, t] = [iso(addDays(new Date(), -29)), iso(new Date())]; state.from = f; state.to = t; $('#fromDate').value = f; $('#toDate').value = t; }
+    renderAll();
+  }));
+  const onDate = () => { const f = $('#fromDate').value, t = $('#toDate').value; if (f && t && f <= t) { state.from = f; state.to = t; state.page = 1; renderAll(); } };
+  $('#fromDate').addEventListener('change', onDate); $('#toDate').addEventListener('change', onDate);
+  let st; $('#searchBox').addEventListener('input', e => { clearTimeout(st); st = setTimeout(() => { state.search = e.target.value; state.page = 1; const [f, t] = periodBounds(); renderList(f, t); }, 150); });
+  $('#csvBtn').addEventListener('click', exportCsv);
+  document.querySelectorAll('[data-toggle-table]').forEach(b => b.addEventListener('click', () => {
+    const card = document.getElementById(b.dataset.toggleTable); const on = card.classList.toggle('show-table');
+    b.textContent = on ? '차트 보기' : '표 보기'; b.setAttribute('aria-pressed', on);
+  }));
+  const root = document.documentElement;
+  try { const saved = localStorage.getItem('ps-theme'); if (saved) root.dataset.theme = saved; } catch (e) {}
+  $('#themeBtn').addEventListener('click', () => {
+    const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme = dark ? 'light' : 'dark';
+    try { localStorage.setItem('ps-theme', root.dataset.theme); } catch (e) {}
+  });
+  let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(renderAll, 120); });
+}
+
+async function loadData() {
+  const badge = $('#dataBadge');
+  const url = window.PAYMENT_DATA_URL || './data.json';
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(res.status);
+    const json = await res.json();
+    const rows = Array.isArray(json) ? json : json.rows;
+    if (!Array.isArray(rows) || !rows.length) throw new Error('empty');
+    state.rows = rows.map(r => ({ company: '', time: '00:00', type: 'new', status: 'paid', method: 'card', ...r, amount: Number(r.amount ?? PMAP[r.product]?.price ?? 0) })).filter(r => PMAP[r.product]);
+    state.sample = false;
+    badge.textContent = `실데이터 · ${fmt(state.rows.length)}건`; badge.classList.add('live');
+    $('#footNote').innerHTML = `데이터 출처: <code>${esc(url)}</code> · 마지막 로드 ${new Date().toLocaleString('ko-KR')}`;
+  } catch (e) {
+    state.rows = makeSample(200); state.sample = true;
+    badge.textContent = '샘플 데이터';
+    $('#footNote').innerHTML = `지금 표시되는 수치는 화면 검수용 <b>샘플 데이터</b>입니다. 같은 폴더에 <code>data.json</code>(결제 건 배열)을 올리거나 <code>window.PAYMENT_DATA_URL</code>로 API 주소를 지정하면 실데이터로 전환됩니다. 레코드 형식: <code>{ id, date:"YYYY-MM-DD", time:"HH:mm", product: single|free5|dealer|company5|companyU, amount, method: card|easy|transfer|vbank, type: new|renewal, status: paid|refunded|failed, user, company }</code>`;
+  }
+  renderAll();
+}
+
+init();
+loadData();
+})();
+</script>
+</body>
+</html>
