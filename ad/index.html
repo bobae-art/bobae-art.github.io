@@ -107,7 +107,7 @@
   .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--surface); font-weight: 600; font-size: 14px; white-space: nowrap; }
   .btn:hover { background: var(--surface-2); }
   .btn.pri { background: var(--brand-solid); border-color: var(--brand-solid); color: var(--brand-ink); }
-  .btn.pri:hover { filter: brightness(1.05); }
+  .btn.pri:hover { filter: none; box-shadow: 0 2px 8px rgba(47,111,237,.28); }
   .btn.ad { background: var(--ad-solid); border-color: var(--ad-solid); color: #fff; }
   .btn.danger { color: var(--bad); border-color: var(--bad); background: transparent; }
   .btn.danger:hover { background: var(--bad-soft); }
@@ -409,11 +409,18 @@ function modal(html, onOpen) {
   if (onOpen) onOpen(panel);
   requestAnimationFrame(() => (modalFocusables()[0] || panel).focus());
 }
-function closeModal() {
+function closeModal(restoreFocus = true) {
   if (!$('#modalBg').classList.contains('on')) return;
   $('#modalBg').classList.remove('on'); setModalBackgroundInert(false); $('#modal').innerHTML = '';
   const returnTo = modalReturnFocus; modalReturnFocus = null;
-  if (returnTo && returnTo.isConnected) returnTo.focus();
+  if (restoreFocus !== false && returnTo && returnTo.isConnected) returnTo.focus();
+}
+function routeAndFocus() {
+  route();
+  requestAnimationFrame(() => {
+    const target = $('#view h1, #view h2, #view .card') || $('#view');
+    target.setAttribute('tabindex', '-1'); target.focus({ preventScroll: true });
+  });
 }
 $('#modalBg').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
 document.addEventListener('keydown', e => {
@@ -687,7 +694,7 @@ function bindMy() {
     const a = byId(b.dataset.cancel); if (!a) return;
     modal(`<h3>신청을 취소할까요?</h3><p>“${esc(a.text)}”<br>취소하면 목록에서 삭제됩니다.</p><div class="mb"><button class="btn" data-m="no">아니오</button><button class="btn danger" data-m="yes">신청 취소</button></div>`, m => {
       $('[data-m="no"]', m).onclick = closeModal;
-      $('[data-m="yes"]', m).onclick = () => { db.ads = db.ads.filter(x => x.id !== a.id); save(); closeModal(); toast('신청이 취소되었습니다.'); route(); };
+      $('[data-m="yes"]', m).onclick = () => { db.ads = db.ads.filter(x => x.id !== a.id); save(); closeModal(false); toast('신청이 취소되었습니다.'); routeAndFocus(); };
     });
   }));
 }
@@ -710,9 +717,9 @@ function bindAdmin() {
   $$('[data-tab]').forEach(b => b.addEventListener('click', () => { location.hash = '#/admin/' + b.dataset.tab; }));
   $$('[data-approve]').forEach(b => b.addEventListener('click', () => {
     const a = byId(b.dataset.approve); if (!a) return;
-    a.status = 'approved'; a.approvedAt = Date.now(); save(); toast('승인했습니다. 광고주에게 결제 요청이 전달됩니다.'); route();
+    a.status = 'approved'; a.approvedAt = Date.now(); save(); toast('승인했습니다. 광고주에게 결제 요청이 전달됩니다.'); routeAndFocus();
   }));
-  $$('[data-unapprove]').forEach(b => b.addEventListener('click', () => { const a = byId(b.dataset.unapprove); if (!a) return; a.status = 'pending'; a.approvedAt = undefined; save(); toast('승인을 취소했습니다.'); route(); }));
+  $$('[data-unapprove]').forEach(b => b.addEventListener('click', () => { const a = byId(b.dataset.unapprove); if (!a) return; a.status = 'pending'; a.approvedAt = undefined; save(); toast('승인을 취소했습니다.'); routeAndFocus(); }));
   $$('[data-reject]').forEach(b => b.addEventListener('click', () => {
     const a = byId(b.dataset.reject); if (!a) return;
     modal(`<h3>반려 사유</h3><p>“${esc(a.text)}”</p><select class="in" id="rsel"><option>운영정책 위반 (허위·과장 광고)</option><option>연락처가 확인되지 않습니다. 사업자 연락처를 포함해 다시 신청해 주세요.</option><option>링크가 열리지 않거나 광고 내용과 다릅니다.</option><option>불법 거래·금지 품목 광고</option><option value="custom">직접 입력</option></select><textarea class="in hidden" id="rtxt" placeholder="반려 사유를 입력해 주세요" style="margin-top:8px"></textarea><div class="mb"><button class="btn" data-m="no">취소</button><button class="btn danger" data-m="yes">반려 처리</button></div>`, m => {
@@ -722,7 +729,7 @@ function bindAdmin() {
       $('[data-m="yes"]', m).onclick = () => {
         const reason = sel.value === 'custom' ? txt.value.trim() : sel.value;
         if (!reason) { txt.focus(); return; }
-        a.status = 'rejected'; a.reason = reason; a.rejectedAt = Date.now(); save(); closeModal(); toast('반려 처리했습니다.'); route();
+        a.status = 'rejected'; a.reason = reason; a.rejectedAt = Date.now(); save(); closeModal(false); toast('반려 처리했습니다.'); routeAndFocus();
       };
     });
   }));
@@ -730,13 +737,13 @@ function bindAdmin() {
     const a = byId(b.dataset.stop); if (!a) return;
     modal(`<h3>게시를 중단할까요?</h3><p>“${esc(a.text)}”<br>게시 중단 시 광고 목록에서 즉시 내려갑니다.</p><div class="mb"><button class="btn" data-m="no">아니오</button><button class="btn danger" data-m="yes">게시 중단</button></div>`, m => {
       $('[data-m="no"]', m).onclick = closeModal;
-      $('[data-m="yes"]', m).onclick = () => { a.status = 'ended'; a.endAt = Date.now(); a.stoppedByAdmin = true; save(); closeModal(); toast('게시를 중단했습니다.'); route(); };
+      $('[data-m="yes"]', m).onclick = () => { a.status = 'ended'; a.endAt = Date.now(); a.stoppedByAdmin = true; save(); closeModal(false); toast('게시를 중단했습니다.'); routeAndFocus(); };
     });
   }));
   const r = $('#resetDemo'); if (r) r.addEventListener('click', () => {
     modal(`<h3>데모 데이터를 초기화할까요?</h3><p>이 브라우저에 저장된 신청·결제 내역이 모두 지워지고 샘플로 돌아갑니다.</p><div class="mb"><button class="btn" data-m="no">취소</button><button class="btn danger" data-m="yes">초기화</button></div>`, m => {
       $('[data-m="no"]', m).onclick = closeModal;
-      $('[data-m="yes"]', m).onclick = () => { db = { ads: seed(), admin: db.admin }; save(); closeModal(); toast('초기화했습니다.'); route(); };
+      $('[data-m="yes"]', m).onclick = () => { db = { ads: seed(), admin: db.admin }; save(); closeModal(false); toast('초기화했습니다.'); routeAndFocus(); };
     });
   });
 }
