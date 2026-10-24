@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>커뮤니티 한줄광고</title>
+<meta name="description" content="보배드림 커뮤니티 한줄광고: 광고 신청, 관리자 승인, 결제 후 광고 게시까지의 흐름">
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f5f6f8; --surface: #ffffff; --surface-2: #f7f8fa;
+    --ink: #111318; --ink-2: #4b5160; --muted: #8a909c;
+    --line: #e6e8ec; --line-2: #d6d9e0;
+    --brand: #2f6fed; --brand-ink: #ffffff; --brand-soft: #eaf1ff;
+    --good: #16833a; --good-soft: #e7f6ec;
+    --warn: #b96a00; --warn-soft: #fff4e0;
+    --bad: #c9352b; --bad-soft: #fdecea;
+    --info: #2f6fed; --info-soft: #eaf1ff;
+    --ad: #7a4ddb; --ad-soft: #f1ecfb;
+    --shadow: 0 1px 2px rgba(16,24,40,.04), 0 6px 20px rgba(16,24,40,.05);
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page: #0f1115; --surface: #171a21; --surface-2: #1e222b;
+      --ink: #eef0f4; --ink-2: #c0c5d0; --muted: #868c99;
+      --line: #262a34; --line-2: #343946;
+      --brand: #4f86f5; --brand-soft: #1b2740;
+      --good: #4cc26e; --good-soft: #15291c;
+      --warn: #f0a940; --warn-soft: #2f2410;
+      --bad: #ef6a60; --bad-soft: #341a18;
+      --info: #4f86f5; --info-soft: #1b2740;
+      --ad: #a98af0; --ad-soft: #241c3a;
+      --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0f1115; --surface: #171a21; --surface-2: #1e222b;
+    --ink: #eef0f4; --ink-2: #c0c5d0; --muted: #868c99;
+    --line: #262a34; --line-2: #343946;
+    --brand: #4f86f5; --brand-soft: #1b2740;
+    --good: #4cc26e; --good-soft: #15291c;
+    --warn: #f0a940; --warn-soft: #2f2410;
+    --bad: #ef6a60; --bad-soft: #341a18;
+    --info: #4f86f5; --info-soft: #1b2740;
+    --ad: #a98af0; --ad-soft: #241c3a;
+    --shadow: none;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--page); color: var(--ink);
+    font-family: system-ui, -apple-system, "Apple SD Gothic Neo", "Segoe UI", "Malgun Gothic", "Noto Sans KR", sans-serif;
+    font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+  a { color: inherit; text-decoration: none; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  .hidden { display: none !important; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+  /* top bar */
+  .top { position: sticky; top: 0; z-index: 30; background: var(--surface); border-bottom: 1px solid var(--line); }
+  .top-in { max-width: 1120px; margin: 0 auto; padding: 0 16px; height: 56px; display: flex; align-items: center; gap: 10px; }
+  .logo { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 19px; color: var(--brand); letter-spacing: -0.02em; }
+  .logo .mark { width: 30px; height: 30px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; }
+  .logo .mark svg { width: 18px; height: 18px; }
+  .top .sp { flex: 1; }
+  .pcnav { display: none; gap: 4px; margin-left: 20px; }
+  .pcnav a { padding: 8px 12px; border-radius: 8px; color: var(--ink-2); font-weight: 600; }
+  .pcnav a.on, .pcnav a:hover { color: var(--brand); background: var(--brand-soft); }
+  .ibtn { width: 38px; height: 38px; border-radius: 10px; border: 0; background: transparent; display: grid; place-items: center; color: var(--ink); }
+  .ibtn:hover { background: var(--surface-2); }
+  .ibtn svg { width: 22px; height: 22px; }
+  .adm { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); padding: 4px 8px 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); cursor: pointer; user-select: none; }
+  .adm.on { border-color: var(--ad); color: var(--ad); background: var(--ad-soft); }
+  .sw { width: 30px; height: 18px; border-radius: 999px; background: var(--line-2); position: relative; transition: .15s; }
+  .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: .15s; }
+  .adm.on .sw { background: var(--ad); }
+  .adm.on .sw::after { left: 14px; }
+  .badge-n { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--bad); color: #fff; font-size: 11px; font-weight: 700; display: inline-grid; place-items: center; }
+
+  /* layout */
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 16px; display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .side { display: none; }
+  .main { min-width: 0; }
+  .crumb { font-size: 13px; color: var(--muted); margin: 2px 0 10px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .crumb b { color: var(--ink); font-weight: 600; }
+  .cats { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 10px; scrollbar-width: none; }
+  .cats::-webkit-scrollbar { display: none; }
+  .cats a { white-space: nowrap; padding: 7px 13px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: 13px; color: var(--ink-2); }
+  .cats a.on { background: var(--ink); color: var(--surface); border-color: var(--ink); font-weight: 600; }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .card + .card { margin-top: 12px; }
+  .card-h { padding: 16px 18px 12px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .card-h h1, .card-h h2 { margin: 0; font-size: 17px; font-weight: 700; }
+  .card-h .hint { color: var(--muted); font-size: 13px; }
+  .card-h .r { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .card-b { padding: 16px 18px; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--surface); font-weight: 600; font-size: 14px; white-space: nowrap; }
+  .btn:hover { background: var(--surface-2); }
+  .btn.pri { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+  .btn.pri:hover { filter: brightness(1.05); }
+  .btn.ad { background: var(--ad); border-color: var(--ad); color: #fff; }
+  .btn.danger { color: var(--bad); border-color: var(--bad); background: transparent; }
+  .btn.danger:hover { background: var(--bad-soft); }
+  .btn.sm { height: 32px; padding: 0 12px; font-size: 13px; border-radius: 8px; }
+  .btn.lg { height: 52px; font-size: 16px; border-radius: 12px; width: 100%; }
+  .btn.ghost { border-color: transparent; background: transparent; color: var(--ink-2); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* ad list */
+  .intro { display: flex; gap: 14px; align-items: center; padding: 14px 18px; background: linear-gradient(135deg, var(--ad-soft), var(--brand-soft)); border-radius: var(--radius); border: 1px solid var(--line); margin-bottom: 12px; }
+  .intro .ic { width: 44px; height: 44px; border-radius: 12px; background: var(--ad); color: #fff; display: grid; place-items: center; flex: none; }
+  .intro .ic svg { width: 24px; height: 24px; }
+  .intro .t { font-weight: 700; }
+  .intro .d { font-size: 13px; color: var(--ink-2); }
+  .intro .btn { margin-left: auto; flex: none; }
+  .adlist { list-style: none; margin: 0; padding: 0; }
+  .adlist li { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+  .adlist li:last-child { border-bottom: 0; }
+  .adlist .tag { flex: none; font-size: 11px; font-weight: 700; padding: 3px 7px; border-radius: 6px; background: var(--ad-soft); color: var(--ad); letter-spacing: .02em; }
+  .adlist .txt { min-width: 0; flex: 1; }
+  .adlist .txt a { display: block; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .adlist .txt a:hover { color: var(--brand); text-decoration: underline; }
+  .adlist .meta { font-size: 12px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; }
+  .adlist .left { flex: none; font-size: 12px; color: var(--ink-2); background: var(--surface-2); padding: 4px 8px; border-radius: 999px; white-space: nowrap; }
+  .empty { padding: 40px 16px; text-align: center; color: var(--muted); font-size: 14px; }
+  .empty svg { width: 40px; height: 40px; margin-bottom: 8px; opacity: .5; }
+  .notice { font-size: 13px; color: var(--muted); padding: 12px 18px; border-top: 1px solid var(--line); line-height: 1.6; }
+  .notice b { color: var(--ink-2); }
+
+  /* forms */
+  .f { display: grid; gap: 16px; }
+  .f label.l { display: block; font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
+  .f label.l .req { color: var(--bad); margin-left: 2px; }
+  .f label.l .opt { color: var(--muted); font-weight: 400; margin-left: 4px; }
+  .in, .f select, .f textarea { width: 100%; height: 46px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--surface); outline: none; font-size: 15px; }
+  .f textarea { height: auto; padding: 12px 14px; resize: vertical; min-height: 92px; }
+  .in:focus, .f select:focus, .f textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+  .in.err { border-color: var(--bad); }
+  .help { font-size: 12px; color: var(--muted); margin-top: 6px; display: flex; justify-content: space-between; gap: 8px; }
+  .help .e { color: var(--bad); }
+  .row2 { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .preview { padding: 12px 14px; border-radius: 10px; background: var(--surface-2); border: 1px dashed var(--line-2); }
+  .preview .pl { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .preview .adlist li { padding: 8px 0; border: 0; }
+
+  .period { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: center; }
+  .pricebox { background: var(--surface-2); border-radius: 12px; padding: 14px 16px; }
+  .pricebox .r { display: flex; justify-content: space-between; font-size: 14px; color: var(--ink-2); padding: 3px 0; }
+  .pricebox .r.total { border-top: 1px solid var(--line-2); margin-top: 8px; padding-top: 10px; color: var(--ink); font-weight: 700; font-size: 17px; }
+  .pricebox .r.total b { color: var(--brand); font-size: 20px; }
+  .chk { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--ink-2); }
+  .chk input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--brand); flex: none; }
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 14px; }
+  .steps div { font-size: 12px; text-align: center; color: var(--muted); padding: 8px 4px; border-radius: 8px; background: var(--surface-2); position: relative; }
+  .steps div b { display: block; font-size: 13px; color: var(--ink-2); }
+  .steps div.on { background: var(--brand-soft); color: var(--brand); }
+  .steps div.on b { color: var(--brand); }
+  .steps div.done { background: var(--good-soft); }
+  .steps div.done b { color: var(--good); }
+
+  /* status chips */
+  .chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .chip.pending { background: var(--warn-soft); color: var(--warn); }
+  .chip.approved { background: var(--info-soft); color: var(--info); }
+  .chip.active { background: var(--good-soft); color: var(--good); }
+  .chip.rejected { background: var(--bad-soft); color: var(--bad); }
+  .chip.ended { background: var(--surface-2); color: var(--muted); }
+  .chip.expired { background: var(--surface-2); color: var(--muted); }
+
+  /* my list / admin list */
+  .items { list-style: none; margin: 0; padding: 0; }
+  .items li { padding: 14px 18px; border-bottom: 1px solid var(--line); display: grid; gap: 8px; }
+  .items li:last-child { border-bottom: 0; }
+  .items .hd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .items .hd .id { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .items .tx { font-weight: 600; word-break: break-all; }
+  .items .tx a { color: var(--brand); font-weight: 400; font-size: 13px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .items .mt { font-size: 12px; color: var(--muted); display: flex; gap: 6px 12px; flex-wrap: wrap; }
+  .items .acts { display: flex; gap: 8px; flex-wrap: wrap; }
+  .items .reason { font-size: 13px; color: var(--bad); background: var(--bad-soft); padding: 8px 10px; border-radius: 8px; }
+  .items .paycta { display: flex; align-items: center; gap: 10px; background: var(--brand-soft); padding: 10px 12px; border-radius: 10px; font-size: 13px; color: var(--ink-2); flex-wrap: wrap; }
+  .items .paycta b { color: var(--ink); }
+  .items .paycta .btn { margin-left: auto; }
+  .tabs { display: flex; gap: 2px; padding: 8px 10px 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
+  .tabs button { border: 0; background: transparent; padding: 10px 12px; font-size: 14px; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; font-weight: 600; display: inline-flex; gap: 6px; align-items: center; }
+  .tabs button.on { color: var(--ink); border-color: var(--ink); }
+  .tabs .cnt { font-size: 11px; background: var(--surface-2); color: var(--ink-2); padding: 1px 6px; border-radius: 999px; }
+  .tabs button.on .cnt { background: var(--ink); color: var(--surface); }
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .stat .k { font-size: 12px; color: var(--muted); }
+  .stat .v { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+  .stat .v small { font-size: 13px; font-weight: 500; color: var(--ink-2); margin-left: 2px; }
+
+  /* payment */
+  .pay-sum { display: grid; gap: 8px; }
+  .pay-sum .r { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+  .pay-sum .r span:first-child { color: var(--muted); flex: none; }
+  .pay-sum .r span:last-child { text-align: right; word-break: break-all; }
+  .methods { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .methods label { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--line-2); border-radius: 10px; cursor: pointer; }
+  .methods label:has(input:checked) { border-color: var(--brand); background: var(--brand-soft); }
+  .methods input { width: 18px; height: 18px; accent-color: var(--brand); }
+  .methods .mi { width: 32px; height: 32px; border-radius: 8px; background: var(--surface-2); display: grid; place-items: center; color: var(--ink-2); flex: none; }
+  .methods .mi svg { width: 18px; height: 18px; }
+  .methods .mn { font-weight: 600; }
+  .methods .md { font-size: 12px; color: var(--muted); }
+  .done { text-align: center; padding: 28px 16px; }
+  .done .ok { width: 64px; height: 64px; border-radius: 50%; background: var(--good-soft); color: var(--good); display: grid; place-items: center; margin: 0 auto 14px; }
+  .done .ok svg { width: 32px; height: 32px; }
+  .done h2 { margin: 0 0 6px; font-size: 20px; }
+  .done p { margin: 0 0 18px; color: var(--ink-2); font-size: 14px; }
+  .done .btns { display: grid; gap: 8px; max-width: 360px; margin: 0 auto; }
+
+  /* modal & toast */
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 50; display: none; align-items: flex-end; justify-content: center; padding: 0; }
+  .modal-bg.on { display: flex; }
+  .modal { background: var(--surface); width: 100%; max-width: 480px; border-radius: 18px 18px 0 0; padding: 20px 20px calc(20px + env(safe-area-inset-bottom)); }
+  .modal h3 { margin: 0 0 10px; font-size: 17px; }
+  .modal p { margin: 0 0 12px; color: var(--ink-2); font-size: 14px; }
+  .modal .mb { display: flex; gap: 8px; margin-top: 14px; }
+  .modal .mb .btn { flex: 1; }
+  .toast { position: fixed; left: 50%; bottom: calc(80px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(10px); background: var(--ink); color: var(--surface); padding: 10px 16px; border-radius: 10px; font-size: 14px; z-index: 60; opacity: 0; transition: .2s; pointer-events: none; max-width: calc(100% - 32px); }
+  .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* bottom nav (mobile) */
+  .bnav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: var(--surface); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(5, 1fr); padding-bottom: env(safe-area-inset-bottom); }
+  .bnav a { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0 6px; font-size: 11px; color: var(--muted); }
+  .bnav a svg { width: 24px; height: 24px; }
+  .bnav a.on { color: var(--ink); font-weight: 600; }
+  .bnav a.fab { position: relative; }
+  .bnav a.fab .c { width: 48px; height: 48px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; margin-top: -22px; box-shadow: 0 4px 12px rgba(47,111,237,.35); }
+  .bnav a.fab .c svg { width: 26px; height: 26px; }
+  .bnav a.fab span.lb { background: var(--brand); color: #fff; padding: 1px 8px; border-radius: 999px; font-size: 10px; }
+
+  .side .box { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; box-shadow: var(--shadow); position: sticky; top: 72px; }
+  .side .box h3 { font-size: 13px; color: var(--muted); margin: 6px 10px 8px; font-weight: 600; }
+  .side .box a { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; border-radius: 8px; color: var(--ink-2); font-size: 14px; }
+  .side .box a:hover { background: var(--surface-2); }
+  .side .box a.on { background: var(--brand-soft); color: var(--brand); font-weight: 700; }
+  .side .box a .n { font-size: 11px; color: var(--muted); }
+  .side .box hr { border: 0; border-top: 1px solid var(--line); margin: 8px 0; }
+  .side .adbox { margin-top: 12px; background: var(--ad-soft); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; font-size: 13px; color: var(--ink-2); }
+  .side .adbox b { display: block; color: var(--ad); margin-bottom: 4px; }
+
+  @media (max-width: 767px) {
+    .adlist li { align-items: flex-start; }
+    .adlist .txt a { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.35; }
+    .adlist .left { margin-top: 2px; }
+    .period { grid-template-columns: 1fr; }
+    .pay-sum .r { flex-direction: column; gap: 2px; }
+    .pay-sum .r span:last-child { text-align: left; }
+  }
+  @media (min-width: 768px) {
+    body { padding-bottom: 32px; }
+    .bnav { display: none; }
+    .pcnav { display: flex; }
+    .wrap { grid-template-columns: 220px 1fr; padding: 24px 20px; }
+    .side { display: block; }
+    .cats { display: none; }
+    .row2 { grid-template-columns: 1fr 1fr; }
+    .methods { grid-template-columns: repeat(3, 1fr); }
+    .stats { grid-template-columns: repeat(4, 1fr); }
+    .modal-bg { align-items: center; padding: 20px; }
+    .modal { border-radius: 18px; padding: 24px; }
+    .toast { bottom: 32px; }
+    .btn.lg { width: auto; min-width: 240px; }
+    .lgwrap { display: flex; justify-content: flex-end; }
+  }
+  @media (min-width: 1024px) { .wrap { grid-template-columns: 240px 1fr; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <a class="logo" href="#/"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/><path d="M12 4v5.5M12 14.5V20M4 12h5.5M14.5 12H20"/></svg></span>보배드림</a>
+    <nav class="pcnav" id="pcnav">
+      <a href="#/" data-nav="home">커뮤니티</a>
+      <a href="#/my" data-nav="my">내 광고</a>
+      <a href="#/admin" data-nav="admin" id="pcAdminLink" class="hidden">관리자</a>
+    </nav>
+    <span class="sp"></span>
+    <button class="adm" id="admToggle" type="button" title="관리자 역할로 전환 (데모)"><span>관리자</span><span class="sw"></span></button>
+    <button class="ibtn" id="themeBtn" type="button" aria-label="테마 전환"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg></button>
+  </div>
+</header>
+
+<div class="wrap">
+  <aside class="side">
+    <div class="box">
+      <h3>커뮤니티</h3>
+      <a href="#/">전체글</a>
+      <a href="#/">자유게시판</a>
+      <a href="#/">정치/시사</a>
+      <a href="#/">자동차 뉴스</a>
+      <a href="#/">시승기/리뷰</a>
+      <a href="#/">사진/영상</a>
+      <a href="#/" class="on" id="sideAd">한줄광고 <span class="n" id="sideAdCount"></span></a>
+      <hr>
+      <a href="#/my" id="sideMy">내 광고 신청</a>
+      <a href="#/admin" id="sideAdmin" class="hidden">광고 승인 관리 <span class="n" id="sideAdminCount"></span></a>
+    </div>
+    <div class="adbox"><b>한줄광고 안내</b>1일 110,000원. 승인 후 결제하면 바로 게시됩니다. 최대 3일까지 한 번에 신청할 수 있어요.<br><a href="#/new" class="btn ad sm" style="margin-top:10px">광고 신청하기</a></div>
+  </aside>
+
+  <main class="main" id="view"></main>
+</div>
+
+<nav class="bnav" id="bnav">
+  <a href="#/" data-nav="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>홈</a>
+  <a href="#/my" data-nav="my"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H8l-4 4z"/><path d="M8 9h8M8 12h5"/></svg>내 광고</a>
+  <a href="#/new" class="fab" data-nav="new"><span class="c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><span class="lb">광고신청</span></a>
+  <a href="#/" data-nav="community"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.6"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5M14 18c0-2.2 1.6-3.8 3.5-3.8S21 16 21 18"/></svg>커뮤니티</a>
+  <a href="#/admin" data-nav="admin" id="bnAdmin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3"/><path d="M6.5 18.5c1.2-2.3 3.2-3.5 5.5-3.5s4.3 1.2 5.5 3.5"/></svg>마이</a>
+</nav>
+
+<div class="modal-bg" id="modalBg" role="dialog" aria-modal="true"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+'use strict';
+/* ---------- config ---------- */
+const PRICE_PER_DAY = 110000;
+const DAY_OPTIONS = [1, 2, 3];
+const MAX_TEXT = 40;
+const LS_KEY = 'bobae.oneLineAds.v1';
+const ME = { id: 'me', name: '나(테스트 회원)' };
+
+const STATUS = {
+  pending:  { label: '승인대기', cls: 'pending' },
+  approved: { label: '결제대기', cls: 'approved' },
+  active:   { label: '광고중',   cls: 'active' },
+  ended:    { label: '종료',     cls: 'ended' },
+  rejected: { label: '반려',     cls: 'rejected' },
+};
+const METHODS = { card: '신용/체크카드', easy: '간편결제', transfer: '계좌이체' };
+
+/* ---------- utils ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const fmt = n => Math.round(n).toLocaleString('ko-KR');
+const won = n => fmt(n) + '원';
+const pad = n => String(n).padStart(2, '0');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const dt = ts => { const d = new Date(ts); return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const dOnly = ts => { const d = new Date(ts); return `${d.getMonth() + 1}/${d.getDate()}`; };
+const DAY = 864e5;
+const uid = () => 'AD' + Date.now().toString(36).toUpperCase().slice(-6) + Math.random().toString(36).slice(2, 5).toUpperCase();
+const hostOf = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return u; } };
+const remain = ad => {
+  const ms = ad.endAt - Date.now();
+  if (ms <= 0) return '종료';
+  const d = Math.floor(ms / DAY), h = Math.floor((ms % DAY) / 36e5);
+  return d > 0 ? `${d}일 ${h}시간 남음` : h > 0 ? `${h}시간 남음` : '1시간 미만';
+};
+
+/* ---------- storage ---------- */
+function seed() {
+  const now = Date.now();
+  const mk = (o) => ({ id: uid() + Math.random().toString(36).slice(2, 4).toUpperCase(), ownerId: 'other', owner: 'bb****', contact: '010-****-****', createdAt: now - 3 * DAY, days: 1, ...o });
+  return [
+    mk({ text: '수입차 전문 정비 · 첫 방문 공임 30% 할인 (분당)', url: 'https://example.com/bundang-garage', owner: '분당수입차정비', status: 'active', days: 3, approvedAt: now - 2 * DAY, paidAt: now - 2 * DAY + 36e5, startAt: now - 2 * DAY + 36e5, endAt: now + DAY + 36e5, method: 'card' }),
+    mk({ text: '2021 GV80 3.5T 무사고 1인신조 · 직거래 문의', url: 'https://example.com/gv80', owner: 'bb****2210', status: 'active', days: 2, approvedAt: now - DAY, paidAt: now - DAY + 7200e3, startAt: now - DAY + 7200e3, endAt: now + DAY + 7200e3, method: 'easy' }),
+    mk({ text: '자동차 보험 갱신 전 무료 비교견적 받아보세요', url: 'https://example.com/insurance', owner: '카인슈어', status: 'active', days: 1, approvedAt: now - 5 * 36e5, paidAt: now - 4 * 36e5, startAt: now - 4 * 36e5, endAt: now + 20 * 36e5, method: 'card' }),
+    mk({ text: '동호회 정기모임 10/31 (토) 용인 · 신입 환영', url: 'https://example.com/meetup', owner: 'bb****0917', status: 'pending', createdAt: now - 5 * 36e5 }),
+    mk({ text: '타이어 교체 4본 공임무료 + 얼라인먼트 서비스', url: 'https://example.com/tire', owner: '일산타이어프로', status: 'pending', days: 2, createdAt: now - 2 * 36e5 }),
+    mk({ text: '중고차 매입 최고가 보장 · 당일 출장 방문', url: 'https://example.com/buy', owner: 'bb****5531', status: 'ended', days: 1, approvedAt: now - 6 * DAY, paidAt: now - 6 * DAY, startAt: now - 6 * DAY, endAt: now - 5 * DAY, method: 'transfer' }),
+    mk({ ownerId: 'me', owner: ME.name, contact: '010-1234-5678', text: '서울오토갤러리 10월 특가 · 전시차 최대 300만원 할인', url: 'https://example.com/seoul-auto', status: 'approved', days: 2, createdAt: now - DAY, approvedAt: now - 3 * 36e5 }),
+    mk({ ownerId: 'me', owner: ME.name, contact: '010-1234-5678', text: '블랙박스 설치 출장 서비스 · 수도권 전역', url: 'https://example.com/dashcam', status: 'rejected', days: 1, createdAt: now - 2 * DAY, rejectedAt: now - DAY, reason: '연락처가 확인되지 않습니다. 사업자 연락처를 포함해 다시 신청해 주세요.' }),
+  ];
+}
+let db = load();
+function load() {
+  try { const s = localStorage.getItem(LS_KEY); if (s) { const j = JSON.parse(s); if (j && Array.isArray(j.ads)) return j; } } catch (e) {}
+  return { ads: seed(), admin: false, seeded: true };
+}
+function save() { try { localStorage.setItem(LS_KEY, JSON.stringify(db)); } catch (e) {} }
+function tick() { // expire ads whose period ended
+  let changed = false;
+  db.ads.forEach(a => { if (a.status === 'active' && a.endAt <= Date.now()) { a.status = 'ended'; changed = true; } });
+  if (changed) save();
+}
+const byId = id => db.ads.find(a => a.id === id);
+const mine = () => db.ads.filter(a => a.ownerId === ME.id).sort((a, b) => b.createdAt - a.createdAt);
+const liveAds = () => db.ads.filter(a => a.status === 'active').sort((a, b) => b.startAt - a.startAt);
+const pendingCount = () => db.ads.filter(a => a.status === 'pending').length;
+
+/* ---------- ui helpers ---------- */
+let toastT;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2200); }
+function modal(html, onOpen) {
+  $('#modal').innerHTML = html; $('#modalBg').classList.add('on');
+  if (onOpen) onOpen($('#modal'));
+}
+function closeModal() { $('#modalBg').classList.remove('on'); }
+$('#modalBg').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+const svgIcon = {
+  mega: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4a1 1 0 0 0 1 1h3l7 4V5L7 9H4a1 1 0 0 0-1 1z"/><path d="M17 9a4 4 0 0 1 0 6M19.5 6.5a8 8 0 0 1 0 11"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"/></svg>',
+  card: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg>',
+  easy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 17h2"/></svg>',
+  bank: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 10l9-6 9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18"/></svg>',
+  inbox: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13l2-8h12l2 8v6H4z"/><path d="M4 13h5l1 2h4l1-2h5"/></svg>',
+};
+const chip = s => `<span class="chip ${STATUS[s].cls}">${STATUS[s].label}</span>`;
+const adRow = (a, live = true) => `<li>
+  <span class="tag">AD</span>
+  <div class="txt"><a href="${esc(a.url)}" target="_blank" rel="noopener nofollow sponsored">${esc(a.text)}</a>
+    <div class="meta"><span>${esc(a.owner)}</span><span>${esc(hostOf(a.url))}</span>${live ? `<span>${dOnly(a.startAt)} ~ ${dOnly(a.endAt)}</span>` : ''}</div></div>
+  ${live ? `<span class="left">${remain(a)}</span>` : ''}
+</li>`;
+
+/* ---------- views ---------- */
+const views = {};
+
+views.home = () => {
+  const ads = liveAds();
+  return `
+  <div class="crumb">커뮤니티 <span>›</span> <b>한줄광고</b></div>
+  <nav class="cats"><a href="#/">전체글</a><a href="#/">자유게시판</a><a href="#/">정치/시사</a><a href="#/">자동차 뉴스</a><a href="#/">시승기/리뷰</a><a href="#/" class="on">한줄광고</a></nav>
+  <div class="intro"><span class="ic">${svgIcon.mega}</span><div><div class="t">한 줄로 전하는 내 광고</div><div class="d">1일 ${won(PRICE_PER_DAY)} · 관리자 승인 후 결제하면 즉시 게시</div></div><a class="btn ad" href="#/new">광고 신청</a></div>
+  <section class="card">
+    <div class="card-h"><h1>한줄광고</h1><span class="hint">게시 중 ${ads.length}건</span><div class="r"><a class="btn sm" href="#/my">내 신청 현황</a></div></div>
+    ${ads.length ? `<ul class="adlist">${ads.map(a => adRow(a)).join('')}</ul>` : `<div class="empty">${svgIcon.inbox}<div>지금 게시 중인 광고가 없습니다.<br>첫 번째 한줄광고를 올려보세요.</div></div>`}
+    <div class="notice"><b>이용 안내</b> · 광고 문구는 ${MAX_TEXT}자 이내, 외부 링크 1개를 포함할 수 있습니다. 관리자 승인을 받은 뒤 결제가 완료되면 결제 시점부터 선택한 일수만큼 게시됩니다. 허위·과장, 불법 거래, 커뮤니티 운영정책 위반 광고는 반려되며, 게시 중이라도 삭제될 수 있습니다.</div>
+  </section>`;
+};
+
+views.new = (params, editId) => {
+  const ed = editId ? byId(editId) : null;
+  const d = ed || { text: '', url: '', owner: '', contact: '', days: 1 };
+  return `
+  <div class="crumb"><a href="#/">커뮤니티</a> <span>›</span> <a href="#/">한줄광고</a> <span>›</span> <b>${ed ? '신청 수정' : '광고 신청'}</b></div>
+  <div class="steps"><div class="on"><b>1. 신청</b>글 작성</div><div><b>2. 승인</b>관리자 검토</div><div><b>3. 결제</b>${won(PRICE_PER_DAY)}/일</div><div><b>4. 게시</b>즉시 시작</div></div>
+  <form class="card" id="adForm" novalidate>
+    <div class="card-h"><h1>${ed ? '한줄광고 신청 수정' : '한줄광고 신청'}</h1><span class="hint">승인 전에는 수정·취소할 수 있습니다</span></div>
+    <div class="card-b f">
+      <div>
+        <label class="l" for="fText">광고 문구<span class="req">*</span></label>
+        <input class="in" id="fText" name="text" maxlength="${MAX_TEXT}" placeholder="예) 수입차 전문 정비 · 첫 방문 공임 30% 할인" value="${esc(d.text)}" required>
+        <div class="help"><span class="e" id="eText"></span><span><span id="cText">${d.text.length}</span>/${MAX_TEXT}자</span></div>
+      </div>
+      <div>
+        <label class="l" for="fUrl">연결 링크<span class="req">*</span><span class="opt">클릭 시 이동할 주소</span></label>
+        <input class="in" id="fUrl" name="url" type="url" inputmode="url" placeholder="https://" value="${esc(d.url)}" required>
+        <div class="help"><span class="e" id="eUrl"></span></div>
+      </div>
+      <div class="row2">
+        <div>
+          <label class="l" for="fOwner">광고주명<span class="req">*</span></label>
+          <input class="in" id="fOwner" name="owner" maxlength="20" placeholder="업체명 또는 닉네임" value="${esc(ed ? d.owner : '')}" required>
+          <div class="help"><span class="e" id="eOwner"></span></div>
+        </div>
+        <div>
+          <label class="l" for="fContact">연락처<span class="req">*</span><span class="opt">관리자 확인용, 비공개</span></label>
+          <input class="in" id="fContact" name="contact" inputmode="tel" placeholder="010-0000-0000" value="${esc(d.contact)}" required>
+          <div class="help"><span class="e" id="eContact"></span></div>
+        </div>
+      </div>
+      <div class="preview"><div class="pl">게시 미리보기</div><ul class="adlist" id="pv">${adRow({ text: d.text || '광고 문구가 여기에 표시됩니다', url: d.url || 'https://', owner: d.owner || '광고주명' }, false)}</ul></div>
+      <div>
+        <label class="l" for="fDays">광고 기간<span class="req">*</span></label>
+        <div class="period">
+          <select id="fDays" name="days">${DAY_OPTIONS.map(n => `<option value="${n}" ${n === d.days ? 'selected' : ''}>${n}일 (${won(PRICE_PER_DAY * n)})</option>`).join('')}</select>
+          <div class="pricebox" id="priceBox"></div>
+        </div>
+      </div>
+      <label class="chk"><input type="checkbox" id="fAgree"><span>광고 내용이 커뮤니티 운영정책에 맞음을 확인했고, 승인 후 결제가 완료되어야 게시가 시작된다는 점에 동의합니다. 반려 시 결제는 발생하지 않습니다.</span></label>
+      <div class="lgwrap"><button class="btn pri lg" type="submit">${ed ? '수정 내용 저장' : '승인 요청하기'}</button></div>
+    </div>
+  </form>`;
+};
+
+views.my = () => {
+  const list = mine();
+  const row = a => {
+    const acts = [];
+    if (a.status === 'approved') acts.push(`<div class="paycta"><span>관리자 승인이 완료되었습니다. 결제하면 바로 게시됩니다.</span><b>${a.days}일 · ${won(a.days * PRICE_PER_DAY)}</b><a class="btn pri sm" href="#/pay/${a.id}">결제하기</a></div>`);
+    if (a.status === 'pending') acts.push(`<div class="acts"><a class="btn sm" href="#/edit/${a.id}">수정</a><button class="btn sm danger" data-cancel="${a.id}">신청 취소</button></div>`);
+    if (a.status === 'rejected') acts.push(`<div class="reason">반려 사유: ${esc(a.reason || '운영정책 위반')}</div><div class="acts"><a class="btn sm" href="#/edit/${a.id}">수정 후 재신청</a></div>`);
+    if (a.status === 'ended') acts.push(`<div class="acts"><a class="btn sm" href="#/edit/${a.id}">같은 내용으로 다시 신청</a></div>`);
+    return `<li>
+      <div class="hd">${chip(a.status)}<span class="id">${a.id}</span><span class="id">신청 ${dt(a.createdAt)}</span></div>
+      <div class="tx">${esc(a.text)}<a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.url)}</a></div>
+      <div class="mt"><span>광고주 ${esc(a.owner)}</span><span>${a.days}일 · ${won(a.days * PRICE_PER_DAY)}</span>${a.status === 'active' ? `<span>게시 ${dt(a.startAt)} ~ ${dt(a.endAt)} (${remain(a)})</span>` : ''}${a.paidAt ? `<span>결제 ${dt(a.paidAt)} · ${METHODS[a.method] || ''}</span>` : ''}${a.status === 'rejected' && a.rejectedAt ? `<span>반려 ${dt(a.rejectedAt)}</span>` : ''}</div>
+      ${acts.join('')}
+    </li>`;
+  };
+  return `
+  <div class="crumb"><a href="#/">커뮤니티</a> <span>›</span> <a href="#/">한줄광고</a> <span>›</span> <b>내 광고 신청</b></div>
+  <section class="card">
+    <div class="card-h"><h1>내 광고 신청</h1><span class="hint">${list.length}건</span><div class="r"><a class="btn ad sm" href="#/new">새 광고 신청</a></div></div>
+    ${list.length ? `<ul class="items">${list.map(row).join('')}</ul>` : `<div class="empty">${svgIcon.inbox}<div>신청한 광고가 없습니다.</div></div>`}
+  </section>`;
+};
+
+views.pay = (id) => {
+  const a = byId(id);
+  if (!a) return `<section class="card"><div class="empty">신청 내역을 찾을 수 없습니다.</div></section>`;
+  if (a.status !== 'approved') return `<section class="card"><div class="empty">${a.status === 'active' ? '이미 결제가 완료되어 게시 중인 광고입니다.' : a.status === 'pending' ? '아직 관리자 승인 전입니다. 승인되면 결제할 수 있습니다.' : '결제할 수 없는 상태입니다.'}<div style="margin-top:14px"><a class="btn" href="#/my">내 광고 신청으로</a></div></div></section>`;
+  const total = a.days * PRICE_PER_DAY;
+  const start = Date.now(), end = start + a.days * DAY;
+  return `
+  <div class="crumb"><a href="#/my">내 광고 신청</a> <span>›</span> <b>결제</b></div>
+  <div class="steps"><div class="done"><b>1. 신청</b>완료</div><div class="done"><b>2. 승인</b>${dt(a.approvedAt)}</div><div class="on"><b>3. 결제</b>${won(total)}</div><div><b>4. 게시</b>즉시 시작</div></div>
+  <section class="card">
+    <div class="card-h"><h1>광고 결제</h1><span class="hint">${a.id}</span></div>
+    <div class="card-b pay-sum">
+      <div class="r"><span>광고 문구</span><span>${esc(a.text)}</span></div>
+      <div class="r"><span>연결 링크</span><span>${esc(a.url)}</span></div>
+      <div class="r"><span>광고주</span><span>${esc(a.owner)}</span></div>
+      <div class="r"><span>광고 기간</span><span>${a.days}일 (결제 직후 ~ ${dt(end)} 예정)</span></div>
+    </div>
+  </section>
+  <section class="card">
+    <div class="card-h"><h2>결제 금액</h2></div>
+    <div class="card-b">
+      <div class="pricebox"><div class="r"><span>한줄광고 1일</span><span>${won(PRICE_PER_DAY)}</span></div><div class="r"><span>광고 일수</span><span>× ${a.days}일</span></div><div class="r total"><span>총 결제금액</span><b>${won(total)}</b></div></div>
+    </div>
+  </section>
+  <form class="card" id="payForm">
+    <div class="card-h"><h2>결제 수단</h2></div>
+    <div class="card-b f">
+      <div class="methods">
+        <label><input type="radio" name="method" value="card" checked><span class="mi">${svgIcon.card}</span><span><span class="mn">신용/체크카드</span><br><span class="md">국내 전 카드사</span></span></label>
+        <label><input type="radio" name="method" value="easy"><span class="mi">${svgIcon.easy}</span><span><span class="mn">간편결제</span><br><span class="md">카카오페이 · 네이버페이 · 토스</span></span></label>
+        <label><input type="radio" name="method" value="transfer"><span class="mi">${svgIcon.bank}</span><span><span class="mn">계좌이체</span><br><span class="md">실시간 이체</span></span></label>
+      </div>
+      <label class="chk"><input type="checkbox" id="payAgree"><span>결제 후 광고가 즉시 게시되며, 게시 시작 후에는 환불이 어렵다는 점을 확인했습니다.</span></label>
+      <div class="lgwrap"><button class="btn pri lg" type="submit" id="payBtn">${won(total)} 결제하기</button></div>
+    </div>
+  </form>`;
+};
+
+views.done = (id) => {
+  const a = byId(id);
+  if (!a || a.status !== 'active') return views.my();
+  return `
+  <div class="steps"><div class="done"><b>1. 신청</b>완료</div><div class="done"><b>2. 승인</b>완료</div><div class="done"><b>3. 결제</b>완료</div><div class="on"><b>4. 게시</b>광고중</div></div>
+  <section class="card"><div class="done">
+    <div class="ok">${svgIcon.check}</div>
+    <h2>결제가 완료되었습니다</h2>
+    <p>광고가 지금부터 ${a.days}일간 게시됩니다.<br>${dt(a.startAt)} ~ ${dt(a.endAt)}</p>
+    <div class="pay-sum" style="text-align:left;max-width:420px;margin:0 auto 18px;background:var(--surface-2);padding:12px 14px;border-radius:10px">
+      <div class="r"><span>주문번호</span><span>${a.id}</span></div>
+      <div class="r"><span>결제수단</span><span>${METHODS[a.method]}</span></div>
+      <div class="r"><span>결제금액</span><span><b>${won(a.days * PRICE_PER_DAY)}</b></span></div>
+    </div>
+    <div class="btns"><a class="btn pri" href="#/">게시된 광고 보기</a><a class="btn" href="#/my">내 광고 신청</a></div>
+  </div></section>`;
+};
+
+views.admin = (tab = 'pending') => {
+  if (!db.admin) return `<section class="card"><div class="empty">관리자 전용 화면입니다.<br>상단의 <b>관리자</b> 스위치를 켜면 (데모) 승인 관리 화면을 볼 수 있습니다.</div></section>`;
+  tick();
+  const all = [...db.ads].sort((a, b) => b.createdAt - a.createdAt);
+  const groups = { pending: all.filter(a => a.status === 'pending'), approved: all.filter(a => a.status === 'approved'), active: all.filter(a => a.status === 'active'), done: all.filter(a => a.status === 'ended' || a.status === 'rejected'), all };
+  const list = groups[tab] || all;
+  const revenue = all.filter(a => a.paidAt).reduce((s, a) => s + a.days * PRICE_PER_DAY, 0);
+  const row = a => `<li>
+    <div class="hd">${chip(a.status)}<span class="id">${a.id}</span><span class="id">신청 ${dt(a.createdAt)}</span></div>
+    <div class="tx">${esc(a.text)}<a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.url)}</a></div>
+    <div class="mt"><span>광고주 ${esc(a.owner)}</span><span>연락처 ${esc(a.contact)}</span><span>${a.days}일 · ${won(a.days * PRICE_PER_DAY)}</span>${a.approvedAt ? `<span>승인 ${dt(a.approvedAt)}</span>` : ''}${a.paidAt ? `<span>결제 ${dt(a.paidAt)} · ${METHODS[a.method] || ''}</span>` : ''}${a.status === 'active' ? `<span>${remain(a)}</span>` : ''}</div>
+    ${a.status === 'rejected' ? `<div class="reason">반려 사유: ${esc(a.reason)}</div>` : ''}
+    <div class="acts">
+      ${a.status === 'pending' ? `<button class="btn sm pri" data-approve="${a.id}">승인</button><button class="btn sm danger" data-reject="${a.id}">반려</button>` : ''}
+      ${a.status === 'approved' ? `<button class="btn sm" data-unapprove="${a.id}">승인 취소</button><span class="hint" style="font-size:12px;color:var(--muted);align-self:center">광고주 결제 대기 중</span>` : ''}
+      ${a.status === 'active' ? `<button class="btn sm danger" data-stop="${a.id}">게시 중단</button>` : ''}
+    </div>
+  </li>`;
+  const tabBtn = (k, label) => `<button class="${tab === k ? 'on' : ''}" data-tab="${k}">${label}<span class="cnt">${groups[k].length}</span></button>`;
+  return `
+  <div class="crumb">관리자 <span>›</span> <b>한줄광고 승인 관리</b></div>
+  <div class="stats">
+    <div class="stat"><div class="k">승인 대기</div><div class="v">${groups.pending.length}<small>건</small></div></div>
+    <div class="stat"><div class="k">결제 대기</div><div class="v">${groups.approved.length}<small>건</small></div></div>
+    <div class="stat"><div class="k">게시 중</div><div class="v">${groups.active.length}<small>건</small></div></div>
+    <div class="stat"><div class="k">누적 결제금액</div><div class="v">${fmt(revenue)}<small>원</small></div></div>
+  </div>
+  <section class="card">
+    <div class="card-h"><h1>광고 승인 관리</h1><div class="r"><button class="btn sm ghost" id="resetDemo">데모 데이터 초기화</button></div></div>
+    <div class="tabs">${tabBtn('pending', '승인대기')}${tabBtn('approved', '결제대기')}${tabBtn('active', '게시중')}${tabBtn('done', '종료/반려')}${tabBtn('all', '전체')}</div>
+    ${list.length ? `<ul class="items">${list.map(row).join('')}</ul>` : `<div class="empty">${svgIcon.inbox}<div>해당하는 신청이 없습니다.</div></div>`}
+  </section>`;
+};
+
+/* ---------- router ---------- */
+function route() {
+  tick();
+  const h = location.hash.replace(/^#\/?/, '');
+  const [name, arg] = h.split('/');
+  const view = $('#view');
+  let nav = 'home';
+  if (name === 'new') { view.innerHTML = views.new(); nav = 'new'; bindForm(); }
+  else if (name === 'edit') { view.innerHTML = views.new(null, arg); nav = 'new'; bindForm(arg); }
+  else if (name === 'my') { view.innerHTML = views.my(); nav = 'my'; bindMy(); }
+  else if (name === 'pay') { view.innerHTML = views.pay(arg); nav = 'my'; bindPay(arg); }
+  else if (name === 'done') { view.innerHTML = views.done(arg); nav = 'my'; }
+  else if (name === 'admin') { view.innerHTML = views.admin(arg); nav = 'admin'; bindAdmin(); }
+  else { view.innerHTML = views.home(); }
+  $$('[data-nav]').forEach(a => a.classList.toggle('on', a.dataset.nav === nav || (nav === 'home' && a.dataset.nav === 'community')));
+  $$('.side .box a').forEach(a => a.classList.remove('on'));
+  ({ home: '#sideAd', new: '#sideAd', my: '#sideMy', admin: '#sideAdmin' })[nav] && $(({ home: '#sideAd', new: '#sideAd', my: '#sideMy', admin: '#sideAdmin' })[nav]).classList.add('on');
+  refreshChrome();
+  window.scrollTo({ top: 0 });
+}
+function refreshChrome() {
+  const p = pendingCount();
+  $('#sideAdCount').textContent = liveAds().length ? `${liveAds().length}건 게시중` : '';
+  $('#sideAdminCount').innerHTML = p ? `<span class="badge-n">${p}</span>` : '';
+  $('#admToggle').classList.toggle('on', db.admin);
+  $('#pcAdminLink').classList.toggle('hidden', !db.admin);
+  $('#sideAdmin').classList.toggle('hidden', !db.admin);
+  $('#pcAdminLink').innerHTML = db.admin && p ? `관리자 <span class="badge-n">${p}</span>` : '관리자';
+  const bn = $('#bnAdmin');
+  bn.href = db.admin ? '#/admin' : '#/my';
+  bn.lastChild.textContent = db.admin ? '관리자' : '마이';
+}
+
+/* ---------- bindings ---------- */
+function bindForm(editId) {
+  const form = $('#adForm'); if (!form) return;
+  const f = { text: $('#fText'), url: $('#fUrl'), owner: $('#fOwner'), contact: $('#fContact'), days: $('#fDays'), agree: $('#fAgree') };
+  const ed = editId ? byId(editId) : null;
+  if (ed && ed.ownerId !== ME.id) { location.hash = '#/my'; return; }
+  const price = () => { const n = Number(f.days.value); $('#priceBox').innerHTML = `<div class="r"><span>1일 단가</span><span>${won(PRICE_PER_DAY)}</span></div><div class="r"><span>일수</span><span>× ${n}일</span></div><div class="r total"><span>결제 예정</span><b>${won(PRICE_PER_DAY * n)}</b></div>`; };
+  const preview = () => { $('#pv').innerHTML = adRow({ text: f.text.value || '광고 문구가 여기에 표시됩니다', url: f.url.value || 'https://', owner: f.owner.value || '광고주명' }, false); $('#cText').textContent = f.text.value.length; };
+  ['input', 'change'].forEach(ev => { f.text.addEventListener(ev, preview); f.url.addEventListener(ev, preview); f.owner.addEventListener(ev, preview); f.days.addEventListener(ev, price); });
+  price(); preview();
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const err = {};
+    const text = f.text.value.trim(), url = f.url.value.trim(), owner = f.owner.value.trim(), contact = f.contact.value.trim();
+    if (text.length < 5) err.text = '광고 문구를 5자 이상 입력해 주세요.';
+    if (text.length > MAX_TEXT) err.text = `광고 문구는 ${MAX_TEXT}자 이내여야 합니다.`;
+    if (!/^https?:\/\/[^\s]+\.[^\s]+$/i.test(url)) err.url = 'http:// 또는 https://로 시작하는 올바른 주소를 입력해 주세요.';
+    if (!owner) err.owner = '광고주명을 입력해 주세요.';
+    if (!/^0\d{1,2}-?\d{3,4}-?\d{4}$/.test(contact)) err.contact = '연락 가능한 전화번호를 입력해 주세요.';
+    ['text', 'url', 'owner', 'contact'].forEach(k => { f[k].classList.toggle('err', !!err[k]); $('#e' + k[0].toUpperCase() + k.slice(1)).textContent = err[k] || ''; });
+    if (!f.agree.checked) { toast('안내 사항에 동의해 주세요.'); return; }
+    if (Object.keys(err).length) { f[Object.keys(err)[0]].focus(); return; }
+    const days = Number(f.days.value);
+    if (ed && (ed.status === 'pending' || ed.status === 'rejected')) {
+      Object.assign(ed, { text, url, owner, contact, days, status: 'pending', createdAt: Date.now(), reason: undefined, rejectedAt: undefined });
+      save(); toast(ed ? '수정되어 다시 승인 요청되었습니다.' : '');
+    } else {
+      db.ads.push({ id: uid(), ownerId: ME.id, owner, contact, text, url, days, status: 'pending', createdAt: Date.now() });
+      save(); toast('승인 요청이 접수되었습니다.');
+    }
+    location.hash = '#/my';
+  });
+}
+function bindMy() {
+  $$('[data-cancel]').forEach(b => b.addEventListener('click', () => {
+    const a = byId(b.dataset.cancel); if (!a) return;
+    modal(`<h3>신청을 취소할까요?</h3><p>“${esc(a.text)}”<br>취소하면 목록에서 삭제됩니다.</p><div class="mb"><button class="btn" data-m="no">아니오</button><button class="btn danger" data-m="yes">신청 취소</button></div>`, m => {
+      $('[data-m="no"]', m).onclick = closeModal;
+      $('[data-m="yes"]', m).onclick = () => { db.ads = db.ads.filter(x => x.id !== a.id); save(); closeModal(); toast('신청이 취소되었습니다.'); route(); };
+    });
+  }));
+}
+function bindPay(id) {
+  const form = $('#payForm'); if (!form) return;
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    if (!$('#payAgree').checked) { toast('환불 안내에 동의해 주세요.'); return; }
+    const a = byId(id); if (!a || a.status !== 'approved') return;
+    const method = form.method.value;
+    const btn = $('#payBtn'); btn.disabled = true; btn.textContent = '결제 진행 중…';
+    setTimeout(() => {
+      const now = Date.now();
+      Object.assign(a, { status: 'active', method, paidAt: now, startAt: now, endAt: now + a.days * DAY, orderNo: 'PY' + now.toString().slice(-8) });
+      save(); location.hash = '#/done/' + a.id;
+    }, 900);
+  });
+}
+function bindAdmin() {
+  $$('[data-tab]').forEach(b => b.addEventListener('click', () => { location.hash = '#/admin/' + b.dataset.tab; }));
+  $$('[data-approve]').forEach(b => b.addEventListener('click', () => {
+    const a = byId(b.dataset.approve); if (!a) return;
+    a.status = 'approved'; a.approvedAt = Date.now(); save(); toast('승인했습니다. 광고주에게 결제 요청이 전달됩니다.'); route();
+  }));
+  $$('[data-unapprove]').forEach(b => b.addEventListener('click', () => { const a = byId(b.dataset.unapprove); if (!a) return; a.status = 'pending'; a.approvedAt = undefined; save(); toast('승인을 취소했습니다.'); route(); }));
+  $$('[data-reject]').forEach(b => b.addEventListener('click', () => {
+    const a = byId(b.dataset.reject); if (!a) return;
+    modal(`<h3>반려 사유</h3><p>“${esc(a.text)}”</p><select class="in" id="rsel"><option>운영정책 위반 (허위·과장 광고)</option><option>연락처가 확인되지 않습니다. 사업자 연락처를 포함해 다시 신청해 주세요.</option><option>링크가 열리지 않거나 광고 내용과 다릅니다.</option><option>불법 거래·금지 품목 광고</option><option value="custom">직접 입력</option></select><textarea class="in hidden" id="rtxt" placeholder="반려 사유를 입력해 주세요" style="margin-top:8px"></textarea><div class="mb"><button class="btn" data-m="no">취소</button><button class="btn danger" data-m="yes">반려 처리</button></div>`, m => {
+      const sel = $('#rsel', m), txt = $('#rtxt', m);
+      sel.onchange = () => txt.classList.toggle('hidden', sel.value !== 'custom');
+      $('[data-m="no"]', m).onclick = closeModal;
+      $('[data-m="yes"]', m).onclick = () => {
+        const reason = sel.value === 'custom' ? txt.value.trim() : sel.value;
+        if (!reason) { txt.focus(); return; }
+        a.status = 'rejected'; a.reason = reason; a.rejectedAt = Date.now(); save(); closeModal(); toast('반려 처리했습니다.'); route();
+      };
+    });
+  }));
+  $$('[data-stop]').forEach(b => b.addEventListener('click', () => {
+    const a = byId(b.dataset.stop); if (!a) return;
+    modal(`<h3>게시를 중단할까요?</h3><p>“${esc(a.text)}”<br>게시 중단 시 광고 목록에서 즉시 내려갑니다.</p><div class="mb"><button class="btn" data-m="no">아니오</button><button class="btn danger" data-m="yes">게시 중단</button></div>`, m => {
+      $('[data-m="no"]', m).onclick = closeModal;
+      $('[data-m="yes"]', m).onclick = () => { a.status = 'ended'; a.endAt = Date.now(); a.stoppedByAdmin = true; save(); closeModal(); toast('게시를 중단했습니다.'); route(); };
+    });
+  }));
+  const r = $('#resetDemo'); if (r) r.addEventListener('click', () => {
+    modal(`<h3>데모 데이터를 초기화할까요?</h3><p>이 브라우저에 저장된 신청·결제 내역이 모두 지워지고 샘플로 돌아갑니다.</p><div class="mb"><button class="btn" data-m="no">취소</button><button class="btn danger" data-m="yes">초기화</button></div>`, m => {
+      $('[data-m="no"]', m).onclick = closeModal;
+      $('[data-m="yes"]', m).onclick = () => { db = { ads: seed(), admin: db.admin }; save(); closeModal(); toast('초기화했습니다.'); route(); };
+    });
+  });
+}
+
+/* ---------- chrome ---------- */
+$('#admToggle').addEventListener('click', () => {
+  db.admin = !db.admin; save(); refreshChrome();
+  toast(db.admin ? '관리자 모드로 전환했습니다.' : '일반 회원 모드입니다.');
+  if (db.admin) location.hash = '#/admin'; else if (location.hash.startsWith('#/admin')) location.hash = '#/'; else route();
+});
+const root = document.documentElement;
+try { const t = localStorage.getItem('bobae.theme'); if (t) root.dataset.theme = t; } catch (e) {}
+$('#themeBtn').addEventListener('click', () => {
+  const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  root.dataset.theme = dark ? 'light' : 'dark';
+  try { localStorage.setItem('bobae.theme', root.dataset.theme); } catch (e) {}
+});
+addEventListener('hashchange', route);
+setInterval(() => { const before = db.ads.filter(a => a.status === 'active').length; tick(); if (db.ads.filter(a => a.status === 'active').length !== before) route(); }, 60e3);
+route();
+})();
+</script>
+</body>
+</html>
